@@ -92,7 +92,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     const signUp = useCallback(
         async ({ name, email, password }: SignUpParams) => {
-            await api.signup({ name, email, password });
+            await api.signUp({ name, email, password });
         },
         [],
     );
