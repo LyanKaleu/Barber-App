@@ -12,7 +12,7 @@ export const Scrollable = styled.ScrollView.attrs({
     showsVerticalScrollIndicator: false,
     contentContainerStyle: {
         flexGrow: 1,
-        paddingTop: 24,
+        padding: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, TextInput, ActivityIndicator } from 'react-native';
-import ImagePicker, { Options } from 'react-native-image-crop-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import FeatherIcon from 'react-native-vector-icons/Feather';
@@ -27,23 +27,6 @@ import {
     AvatarIconContainer,
 } from './styles';
 import { ImageDTO, ProfileFormData } from './types';
-
-const imageCommonOptions: Options = {
-    cropping: true,
-    width: 240,
-    height: 240,
-    cropperActiveWidgetColor: '#ff9000',
-    cropperToolbarWidgetColor: '#232129',
-    cropperStatusBarColor: '#28262e',
-    cropperToolbarColor: '#f4ede8',
-    cropperToolbarTitle: 'Editar imagem',
-    cropperCancelText: 'Cancelar',
-    mediaType: 'photo',
-    cropperChooseText: 'Selecionar',
-    loadingLabelText: 'Processando imagem',
-    compressImageQuality: 0.8,
-    forceJpg: true,
-};
 
 const Profile: React.FC = () => {
     const { user, updateUser } = useAuth();
@@ -132,11 +115,11 @@ const Profile: React.FC = () => {
                 const filePaths = image.uri.split('/');
                 const filename = filePaths[filePaths.length - 1];
 
-                formData.append('avatar', blob, image.name);
+                formData.append('avatar', blob, filename);
 
-                const apiResponse = await api.updateAvatar(formData);
+                const response = await api.updateAvatar(formData);
 
-                updateUser(apiResponse.data);
+                updateUser(response.data);
             } catch (error: any) {
                 alert({
                     title: 'Erro',
@@ -149,53 +132,29 @@ const Profile: React.FC = () => {
         [updateUser],
     );
 
-    const handleOpenGallery = React.useCallback(async () => {
+    const handleOpenPicker = async (selectType: 'image' | 'video') => {
         try {
-            const cameraGranted = await requestCameraPermission();
-            const galeriaGranted = await requestGaleriaPermission();
+            const result = await DocumentPicker.getDocumentAsync({
+                type: selectType === 'image'
+                    ? ['image/png', 'image/jpg', 'image/jpeg']
+                    : ['video/mp4', 'video/gif']
+            });
 
-            if (cameraGranted !== 'granted' || galeriaGranted !== 'granted') {
-                return;
+            if (result.type !== 'cancel') {
+                const { uri, mimeType, name } = result;
+                await uploadAvatar({
+                    uri,
+                    type: mimeType || 'image/jpeg',
+                    name: name || uri.split('/').pop() || 'image.jpg',
+                });
             }
-
-            const image = await ImagePicker.openPicker(imageCommonOptions);
-
-            const imagePaths = image.path.split('/');
-
-            await uploadAvatar({
-                uri: image.path,
-                type: image.mime,
-                name: image.filename || imagePaths[imagePaths.length - 1],
+        } catch (error) {
+            alert({
+                title: 'Erro',
+                message: 'Houve um erro ao selecionar a imagem, tente novamente',
             });
-        } catch {
-            // falha quando cancela o picker
         }
-    }, [uploadAvatar]);
-
-    const handleCamera = React.useCallback(async () => {
-        try {
-            const cameraGranted = await requestCameraPermission();
-
-            if (cameraGranted !== 'granted') {
-                return;
-            }
-
-            const image = await ImagePicker.openCamera({
-                ...imageCommonOptions,
-                useFrontCamera: true,
-            });
-
-            const imagePaths = image.path.split('/');
-
-            await uploadAvatar({
-                uri: image.path,
-                type: image.mime,
-                name: image.filename || imagePaths[imagePaths.length - 1],
-            });
-        } catch {
-            // Falha quando cancela camera
-        }
-    }, [uploadAvatar]);
+    };
 
     const handleRemoveAvatar = React.useCallback(async () => {
         try {
@@ -215,8 +174,7 @@ const Profile: React.FC = () => {
 
     function handleShowActionSheet() {
         const options = [
-            { label: 'Abrir galeria', action: handleOpenGallery },
-            { label: 'Tirar uma foto', action: handleCamera },
+            { label: 'Abrir galeria', action: () => handleOpenPicker('image') },
             { label: 'Cancelar', action: () => undefined },
         ];
         const possuiFoto = !!user?.avatar_url;
@@ -227,7 +185,7 @@ const Profile: React.FC = () => {
         showActionSheetWithOptions(
             {
                 options: options.map(option => option.label),
-                cancelButtonIndex: options.length,
+                cancelButtonIndex: options.length - 1,
                 destructiveButtonIndex: possuiFoto ? 0 : undefined,
             },
             selectedIndex => {
@@ -337,7 +295,7 @@ const Profile: React.FC = () => {
                 onPress={() => {
                     formRef.current?.submitForm();
                 }}>
-                    Confirma mudanças
+                    Confirmar mudanças
             </Button>
         </Container>
     );

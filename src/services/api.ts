@@ -4,7 +4,7 @@ import * as ApiTypes from './api.types';
 
 const createApi = () => {
     const axiosInstance = axios.create({
-        baseURL: '',
+        baseURL: 'http://localhost:8081',
     });
 
     const setToken = (token: string) => {
