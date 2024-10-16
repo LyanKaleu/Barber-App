@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Image, TextInput } from 'react-native';
+import { Alert, Image, TextInput } from 'react-native';
 import {
     RouteProp,
     useFocusEffect,
@@ -13,7 +13,6 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import { useTheme } from 'styled-components/native';
 import getValidationErrors from '../../utils/getValidationErrors';
-import { useAuth } from '../../hooks/auth';
 import alert from '../../utils/alert';
 import { AuthStackParams } from '../../routes/auth.routes';
 
@@ -26,6 +25,8 @@ import {
     ForgotPassword,
     CreateAccount,
 } from './styles';
+import { getCurrentUser, signIn } from '../../lib/actions/client.actions';
+import { GlobalContext } from '../../context/GlobalProvider';
 
 const loginSchema = object().shape({
     email: string()
@@ -42,7 +43,7 @@ interface LoginFormData {
 function Login() {
     const theme = useTheme();
 
-    const { signIn } = useAuth();
+    const { setUser, setIsLogged } = React.useContext(GlobalContext);
     const route = useRoute<RouteProp<AuthStackParams, 'Login'>>();
     const navigation = useNavigation<StackNavigationProp<AuthStackParams, 'Login'>>();
 
@@ -83,16 +84,30 @@ function Login() {
             }
 
             try {
-                await signIn(data);
-            } catch {
-                alert({
-                    title: 'Erro ao fazer login',
-                    message: 'Verifique suas credenciais',
-                });
-            }
-            setFetching(false);
-        },
-        [signIn],
+                await signIn(data.email, data.password);
+
+                const result = await getCurrentUser();
+
+                if (result) {
+                    const mappedUser: User = {
+                        id: result.$id,
+                        email: result.email,
+                        username: result.name,
+                        phone: result.phone
+                    };
+
+                    setUser(mappedUser);
+                } else {
+                    setUser(null); 
+                  }
+                    setIsLogged(true);
+                    Alert.alert("Success", "Usuario logado");
+                } catch (error: any) {
+                    Alert.alert("Error", error.message);
+                }
+                setFetching(false);
+            },
+            [signIn],
     );
 
     return (
@@ -118,7 +133,7 @@ function Login() {
                         blurOnSubmit={false}
                         returnKeyType="next"
                         onSubmitEditing={() => {
-                        passwordRef.current && passwordRef.current.focus();
+                            passwordRef.current && passwordRef.current.focus();
                         }}
                     />
 
@@ -128,7 +143,7 @@ function Login() {
                         placeholder="Senha"
                         secureTextEntry
                         onSubmitEditing={() => {
-                        formRef.current?.submitForm();
+                            formRef.current?.submitForm();
                         }}
                         returnKeyType="send"
                         ref={passwordRef}
@@ -137,8 +152,8 @@ function Login() {
                     <Button
                         loading={fetching}
                         onPress={() => {
-                        formRef.current?.submitForm();
-                    }}>
+                            formRef.current?.submitForm();
+                        }}>
                         Entrar
                     </Button>
                 </Form>

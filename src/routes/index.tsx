@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 
-import { useAuth } from '../hooks/auth';
+import { GlobalContext } from "../context/GlobalProvider";
 
 import AuthRoutes from './auth.routes'
 import AppRoutes from './app.routes'
 
 const Routes: React.FC = () => {
-    const { user, loading } = useAuth();
+    const { loading, user } = useContext(GlobalContext);
 
     if (loading) {
         return null;
