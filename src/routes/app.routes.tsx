@@ -6,8 +6,8 @@ import Dashboard from '../screens/Dashboard';
 import Profile from '../screens/Profile';
 import AppointmentDatePicker from '../screens/AppointmentDatePicker';
 import AppointmentCreated from '../screens/AppointmentCreated';
-import { useAuth  } from '../hooks/auth';
 import alert from '../utils/alert';
+import { signOut } from '../lib/actions/client.actions';
 
 export type AppStackParams = {
     Dashboard: undefined;
@@ -26,7 +26,6 @@ export type AppStackParams = {
 const AppStack = createStackNavigator<AppStackParams>();
 
 function AuthRoutes() {
-    const { signOut } = useAuth();
 
     return (
         <AppStack.Navigator

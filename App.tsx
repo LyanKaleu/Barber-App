@@ -11,7 +11,6 @@ import light from "./src/styles/themes/light";
 import dark from "./src/styles/themes/dark";
 
 import Routes from "./src/routes";
-import AppProvider from "./src/hooks";
 import GlobalProvider from "./src/context/GlobalProvider";
 
 const loadFonts = async () => {
@@ -52,9 +51,7 @@ export default function App() {
               backgroundColor="#312e38"
               translucent
             />
-            <AppProvider>
               <Routes />
-            </AppProvider>
             <ThemeSwitcher toggleTheme={toogleTheme} />
           </ThemeProvider>
         </NavigationContainer>
