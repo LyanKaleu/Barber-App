@@ -1,6 +1,7 @@
 import React, { createContext, FC, useState, useEffect } from "react";
 import { PropsWithChildren } from "react";
-import { getCurrentUser } from "../lib/actions/client.actions";
+import { getCurrentUser } from "../lib/actions/user.actions";
+import { GlobalContextType, User } from "../@types";
 
 // Inicializa o contexto com um valor padrão
 export const GlobalContext = createContext<GlobalContextType>({
@@ -24,8 +25,9 @@ export const GlobalProvider: FC<PropsWithChildren> = ({ children }) => {
           const mappedUser: User = {
             id: res.$id,         
             email: res.email,     
-            username: res.name,   
-            phone: res.phone,     
+            username: res.username,   
+            phone: res.phone, 
+            avatar_url: res.avatar    
           };
           setIsLogged(true);
           setUser(mappedUser);

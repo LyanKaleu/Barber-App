@@ -20,7 +20,7 @@ interface AsyncAlertOptions extends RNAlertOptions {
     buttons?: AsyncAlertButton[];
 }
 
-const alert = (options: AlertOptions): void => {
+const alert = (options: AlertOptions, p0: { cancelable: boolean; }): void => {
     const { title, message, buttons, cancelable = true, onDismiss } = options;
 
     return Alert.alert(title, message, buttons, { cancelable, onDismiss });

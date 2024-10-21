@@ -1,5 +1,7 @@
 declare module '*.png';
 
+declare type Status = "Agendado" | "Cancelado" | "Concluido";
+
 declare interface CreateUserParams {
     email: string;
     password: string;
@@ -7,13 +9,12 @@ declare interface CreateUserParams {
     phone: string;
 }
 
-// Definição de tipos para o usuário e contexto global
 declare interface User {
     id: string;
     email: string;
     username: string;
     phone: string;
-    // Adicione outros campos conforme necessário
+    avatar_url: res.avatar  
   };
   
 declare interface GlobalContextType{
@@ -23,3 +24,29 @@ declare interface GlobalContextType{
     setUser: (user: User | null) => void;
     loading: boolean;
   };
+
+  export interface Barber {
+    accountId: string;
+    username: string;
+    email: string;
+    phone: string;
+    role: string;
+    avatar_url: string | null;
+}
+
+  export interface Services {
+    id: string,
+    name: string,
+    duration: number,
+    price: number,
+    description: string
+}
+// types.ts
+export interface CreateAppointmentParams {
+  barberId: string;
+  schedule: string;
+  clientId?: string; // Torna clientId opcional
+  status: string;
+  service: string;
+  note: string;
+}

@@ -25,8 +25,9 @@ import {
     ForgotPassword,
     CreateAccount,
 } from './styles';
-import { getCurrentUser, signIn } from '../../lib/actions/client.actions';
+import { getCurrentUser, signIn } from '../../lib/actions/user.actions';
 import { GlobalContext } from '../../context/GlobalProvider';
+import { User } from '../../@types';
 
 const loginSchema = object().shape({
     email: string()
@@ -93,7 +94,8 @@ function Login() {
                         id: result.$id,
                         email: result.email,
                         username: result.name,
-                        phone: result.phone
+                        phone: result.phone,
+                        avatar_url: result.avatar_url
                     };
 
                     setUser(mappedUser);

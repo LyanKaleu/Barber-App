@@ -13,7 +13,8 @@ export const appwriteConfig = {
     projectId: "66f809da000a980bacff",
     storageId: "66f80b59000e103637dc",
     databaseId: "66fd8e00003adfe554bf",
-    userCollectionId: "66fd8e2f000daf3bf263"
+    userCollectionId: "66fd8e2f000daf3bf263",
+    schedulingCollectionId: "6707d9d1000149080422"
 };
 
 const client = new Client();

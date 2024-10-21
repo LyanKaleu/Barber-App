@@ -18,6 +18,7 @@ import MyButtonContainer from '../../components/ButtonContainer';
 import MyAvatar from '../../components/Avatar';
 import MyButton from '../../components/Button';
 import MyIconButton from '../../components/IconButton';
+import { Barber } from '../../@types';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -60,7 +61,7 @@ export const ProvidersListContainer = styled.View`
     height: 112px;
 `;
 
-export const ProvidersList = styled(FlatList<Provider>).attrs({
+export const ProvidersList = styled(FlatList<Barber>).attrs({
     horizontal: true,
     showsHorizontalScrollIndicator: false,
     contentContainerStyle: {

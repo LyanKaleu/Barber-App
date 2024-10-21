@@ -18,8 +18,9 @@ import {
     BackToLogin,
 } from './styles';
 import { useTheme } from 'styled-components/native';
-import { createUser } from '../../lib/actions/client.actions';
+import { createUser } from '../../lib/actions/user.actions';
 import { GlobalContext } from '../../context/GlobalProvider';
+import { User } from '../../@types';
 
 const phoneRegExp = /^(1|[2-9][0-9])\d{9,14}$/;
 
@@ -93,7 +94,8 @@ const SignUp: React.FC = () => {
                     id: result.$id,
                     email: result.email,
                     username: result.username,
-                    phone: result.phone
+                    phone: result.phone,
+                    avatar_url: result.avatar_url
                 };
 
                 setUser(mappedUser);

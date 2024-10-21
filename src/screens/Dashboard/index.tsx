@@ -1,11 +1,6 @@
-import * as React from 'react';
+import React, { useContext } from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-
-import alert from '../../utils/alert';
-import api from '../../services/api';
-import { useAuth } from '../../hooks/auth';
-import { Provider } from './types';
 import { AppStackParams } from '../../routes/app.routes';
 
 import {
@@ -25,22 +20,38 @@ import {
     UserAvatar,
     EmptyMessage,
 } from './styles';
+import { GlobalContext } from "../../context/GlobalProvider";
+import { getBarbers } from '../../lib/actions/user.actions';
+import { Alert } from 'react-native';
+import { Barber } from '../../@types';
 
 const Dashboard: React.FC = () => {
-    const { user } = useAuth();
-
+    const { loading, user } = useContext(GlobalContext);
+    
     const navigation = useNavigation<NavigationProp<AppStackParams>>();
 
-    const [providers, setProviders] = React.useState<Provider[]>([]);
     const [fetching, setFetching] = React.useState(false);
-
+    const [barbers, setBarbers] = React.useState<Barber[]>([]);
+    
     const getProviders = React.useCallback(async () => {
         try {
             setFetching(true);
-            const { data } = await api.getProviders();
-            setProviders(data);
+           
+            const barberList = await getBarbers(); // Chama a função que busca os barbeiros
+
+            // Mapeia os documentos para o tipo Barber antes de chamar setBarbers
+            const mappedBarbers: Barber[] = barberList.map((doc) => ({
+                accountId: doc.accountId,
+                username: doc.username,
+                email: doc.email,
+                phone: doc.phone,
+                role: doc.role,
+                avatar_url: doc.avatar,
+            }));
+
+            setBarbers(mappedBarbers); 
         } catch {
-            alert({ title: 'Erro', message: 'Erro ao buscar lista de provedores' });
+            Alert.alert('Erro ao buscar lista de provedores');
         } finally {
             setFetching(false);
         }
@@ -56,28 +67,27 @@ const Dashboard: React.FC = () => {
         },
         [navigation],
     );
-
+      
     return (
         <Container safeTop statusBarProps={{ backgroundColor: '#28262e' }}>
             <Header>
                 <HeaderTitle>
                     Bem vindo,
                     {'\n'}
-                    <UserName bold>{user.name}</UserName>
+                    <UserName bold>{user?.username}</UserName>
                 </HeaderTitle>
 
                 <ProfileButton onPress={() => navigation.navigate('Profile')}>
                     <UserAvatar
                         size={56}
-                        source={{ uri: user.avatar_url || undefined }}
-                        nome={user.name}
+                        source={{ uri: user?.avatar_url || undefined }}
+                        nome={user?.username || "Usuário"}
                     />
                 </ProfileButton>
             </Header>
-
             <ProvidersList
-                data={providers}
-                keyExtractor={provider => provider.id}
+                data={barbers}
+                keyExtractor={provider => provider.accountId}
                 onRefresh={getProviders}
                 refreshing={fetching}
                 ListHeaderComponent={
@@ -95,26 +105,26 @@ const Dashboard: React.FC = () => {
                 renderItem={({ item: provider }) => (
                     <ProviderContainer
                         onPress={() => {
-                            handleSelectProvider(provider.id);
+                            handleSelectProvider(provider.accountId);
                         }}>
-                            <ProviderAvatar
-                                size={72}
-                                nome={provider.name}
-                                source={{ uri: provider.avatar_url || undefined }}
-                            />
+                        <ProviderAvatar
+                            size={72}
+                            nome={provider?.username}
+                            source={{ uri: provider?.avatar_url || undefined }}
+                        />
 
-                            <ProviderInfo>
-                                <ProviderName>{provider.name}</ProviderName>
-                                <ProviderMeta>
-                                    <FeatherIcon name="calendar" size={14} color="#ff9000" />
-                                    <ProviderMetaText>Segunda à sexta</ProviderMetaText>
-                                </ProviderMeta>
-                                <ProviderMeta>
-                                    <FeatherIcon name="clock" size={14} color="#ff9000" />
-                                    <ProviderMetaText>8h às 18h</ProviderMetaText>
-                                </ProviderMeta>
-                            </ProviderInfo>
-                        </ProviderContainer>
+                        <ProviderInfo>
+                            <ProviderName>{provider?.username}</ProviderName>
+                            <ProviderMeta>
+                                <FeatherIcon name="calendar" size={14} color="#ff9000" />
+                                <ProviderMetaText>Segunda à sexta</ProviderMetaText>
+                            </ProviderMeta>
+                            <ProviderMeta>
+                                <FeatherIcon name="clock" size={14} color="#ff9000" />
+                                <ProviderMetaText>8h às 18h</ProviderMetaText>
+                            </ProviderMeta>
+                        </ProviderInfo>
+                    </ProviderContainer>
                 )}
             />
         </Container>

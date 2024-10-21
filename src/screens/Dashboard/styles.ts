@@ -5,8 +5,7 @@ import MyScreen from '../../components/Screen';
 import MyText from '../../components/Text';
 import MyButtonContainer from '../../components/ButtonContainer';
 import MyAvatar from '../../components/Avatar';
-
-import { Provider } from './types';
+import { Barber } from '../../@types';
 
 export const Container = styled(MyScreen)`
     flex: 1;
@@ -34,7 +33,7 @@ export const ProfileButton = styled.TouchableOpacity``;
 
 export const UserAvatar = styled(MyAvatar)``;
 
-export const ProvidersList = styled(FlatList<Provider>).attrs({
+export const ProvidersList = styled(FlatList<Barber>).attrs({
     contentContainerStyle: {
         paddingTop: 32,
         paddingBottom: 16,
