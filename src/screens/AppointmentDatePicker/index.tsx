@@ -62,6 +62,8 @@ import {
     LoadingCalendar,
 } from './styles';
 
+import { GlobalContext } from '../../context/GlobalProvider';
+
 const minimumDate = () => {
     const today = new Date();
 
@@ -73,7 +75,9 @@ const minimumDate = () => {
 };
 
 const AppointmentDatePicker: React.FC = () => {
-    const { user } = useAuth();
+    // const { user } = useAuth();
+    const { user } = React.useContext(GlobalContext);
+
     const route = useRoute<RouteProp<AppStackParams, 'AppointmentDatePicker'>>();
     const navigation =
         useNavigation<
@@ -304,7 +308,7 @@ const AppointmentDatePicker: React.FC = () => {
 
                     <UserAvatar
                         size={56}
-                        nome={user.name}
+                        nome={user?.username}
                         source={{ uri: user.avatar_url || undefined }}
                     />
                 </Header>

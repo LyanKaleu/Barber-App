@@ -10,6 +10,7 @@ const Avatar: React.FC<AvatarProps> = props => {
     const [hideIniciais, setHideIniciais] = useState(false);
 
     const iniciais = useMemo(() => {
+        if (!nome) return ' ';
         const nomesArray = nome.split(' ');
 
         const primeiraLetra = nomesArray[0].charAt(0);

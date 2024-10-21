@@ -36,7 +36,7 @@ const signUpSchema = yup.object().shape({
   phone: yup
     .string()
     .required('Número de telefone obrigatório')
-    .matches(phoneRegExp, 'Número de telefone inválido. Formato esperado: +86994516203')
+    .matches(phoneRegExp, 'Número de telefone inválido. Formato esperado: (86)99490-5662')
 });
 
 interface SignUpFormData {

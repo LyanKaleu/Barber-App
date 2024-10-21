@@ -33,7 +33,7 @@ export default function App() {
     loadResources();
   }, []);
 
-  const toogleTheme = (): void => {
+  const toggleTheme = (): void => {
     setTheme(theme.title === "dark" ? light : dark);
   };
 
@@ -52,7 +52,7 @@ export default function App() {
               translucent
             />
               <Routes />
-            <ThemeSwitcher toggleTheme={toogleTheme} />
+            <ThemeSwitcher toggleTheme={toggleTheme} />
           </ThemeProvider>
         </NavigationContainer>
       </ActionSheetProvider>

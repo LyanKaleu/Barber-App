@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-
+import { GlobalContext } from '../../context/GlobalProvider';
 import alert from '../../utils/alert';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/auth';
@@ -27,7 +27,7 @@ import {
 } from './styles';
 
 const Dashboard: React.FC = () => {
-    const { user } = useAuth();
+    const { user } = React.useContext(GlobalContext);
 
     const navigation = useNavigation<NavigationProp<AppStackParams>>();
 
@@ -37,7 +37,54 @@ const Dashboard: React.FC = () => {
     const getProviders = React.useCallback(async () => {
         try {
             setFetching(true);
-            const { data } = await api.getProviders();
+            // const { data } = await api.getProviders();
+            // Lista de provedores fictícios
+            const data: Provider[] = [
+                { 
+                    id: '1', 
+                    name: 'Barbeiro 1', 
+                    email: 'barbeiro1@example.com',
+                    avatar: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    avatar_url: 'https://example.com/avatar1.png',
+                    service: 'Corte de cabelo',
+                    price: 30.00, 
+                },
+                { 
+                    id: '2', 
+                    name: 'Barbeiro 2', 
+                    email: 'barbeiro2@example.com',
+                    avatar: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    avatar_url: 'https://example.com/avatar2.png' ,
+                    service: 'Barba',
+                    price: 20.00,
+                },
+                { 
+                    id: '3', 
+                    name: 'Barbeiro 3', 
+                    email: 'barbeiro3@example.com',
+                    avatar: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    avatar_url: 'https://example.com/avatar3.png',
+                    service: 'Corte de cabelo e barba',
+                    price: 45.00, 
+                },
+                { 
+                    id: '4', 
+                    name: 'Barbeiro 4', 
+                    email: 'barbeiro4@example.com',
+                    avatar: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    avatar_url: 'https://example.com/avatar4.png',
+                    service: 'Corte de cabelo',
+                    price: 30.00, 
+                },
+            ];
             setProviders(data);
         } catch {
             alert({ title: 'Erro', message: 'Erro ao buscar lista de provedores' });
@@ -63,14 +110,14 @@ const Dashboard: React.FC = () => {
                 <HeaderTitle>
                     Bem vindo,
                     {'\n'}
-                    <UserName bold>{user.name}</UserName>
+                    <UserName bold>{user?.username}</UserName>
                 </HeaderTitle>
 
                 <ProfileButton onPress={() => navigation.navigate('Profile')}>
                     <UserAvatar
                         size={56}
                         source={{ uri: user.avatar_url || undefined }}
-                        nome={user.name}
+                        nome={user?.username}
                     />
                 </ProfileButton>
             </Header>
@@ -112,6 +159,14 @@ const Dashboard: React.FC = () => {
                                 <ProviderMeta>
                                     <FeatherIcon name="clock" size={14} color="#ff9000" />
                                     <ProviderMetaText>8h às 18h</ProviderMetaText>
+                                </ProviderMeta>
+                                <ProviderMeta>
+                                    <FeatherIcon name="scissors" size={14} color="#ff9000" />
+                                    <ProviderMetaText>{provider.service}</ProviderMetaText>
+                                </ProviderMeta>
+                                <ProviderMeta>
+                                    <FeatherIcon name="dollar-sign" size={14} color="#ff9000" />
+                                    <ProviderMetaText>R$ {provider.price.toFixed(2)}</ProviderMetaText>
                                 </ProviderMeta>
                             </ProviderInfo>
                         </ProviderContainer>

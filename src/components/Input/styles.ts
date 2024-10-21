@@ -12,11 +12,12 @@ export const Container = styled.View<ContainerProps>`
     width: 100%;
     height: 60px;
     padding: 0 16px;
-    background: #232129;
+    background: ${props => props.theme.colors.li};
     border-radius: 10px;
     flex-direction: row;
     align-items: center;
-    border: 2px solid #232129;
+    border-width: 2px;
+    border-color: ${props => props.theme.colors.li};
 
     ${({ error }) =>
         error &&
@@ -37,11 +38,17 @@ export const TextInput = styled(RNTextInput).attrs(props => ({
     placeholderTextColor: '#666360',
 }))`
     flex: 1;
-    color: #fff;
+    color: ${props => props.theme.colors.inputColor};
     font-size: 16px;
     font-family: 'RobotoSlab-Regular';
 `;
 
 export const Icon = styled(RNIcon)`
     margin-right: 10px;
+`;
+
+export const ErrorText = styled.Text`
+    color: #c53030;
+    font-size: 14px;
+    margin: 4px 0 0 16px;
 `;

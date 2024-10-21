@@ -9,7 +9,7 @@ import React, {
 import { TextInputProps, TextInput as RNTextInput } from 'react-native';
 import { useField } from '@unform/core';
 
-import { Container, TextInput , Icon } from './styles';
+import { Container, TextInput , Icon, ErrorText } from './styles';
 
 interface InputProps extends TextInputProps {
     name: string,
@@ -71,28 +71,31 @@ const Input: React.ForwardRefRenderFunction<InputRef, InputProps> = (function In
     }, [fieldName, registerField]);
 
     return(
-        <Container style={style} isFocused={isFocused} error={!!error}>
-            {icon && (
-                <Icon
-                    size={20}
-                    name={icon}
-                    color={isFocused || isFilled ? '#ff9000' : '#666360'}
-                />
-            )}
+        <>
+            {error && <ErrorText>{error}</ErrorText>}
+            <Container style={style} isFocused={isFocused} error={!!error}>
+                {icon && (
+                    <Icon
+                        size={20}
+                        name={icon}
+                        color={isFocused || isFilled ? '#ff9000' : '#666360'}
+                    />
+                )}
 
-            <TextInput
-                ref={inputElementRef}
-                keyboardAppearance='dark'
-                placeholderTextColor='#666360'
-                defaultValue={defaultValue}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onChangeText={value => {
-                    inputValueRef.current.value = value;
-                }}
-                {...rest}
-            />
-        </Container>
+                <TextInput
+                    ref={inputElementRef}
+                    keyboardAppearance='dark'
+                    placeholderTextColor='#666360'
+                    defaultValue={defaultValue}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                    onChangeText={value => {
+                        inputValueRef.current.value = value;
+                    }}
+                    {...rest}
+                />
+            </Container>
+    </>
     );
 });
 

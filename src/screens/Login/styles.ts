@@ -16,11 +16,13 @@ export const Scrollable = styled.ScrollView.attrs({
         alignItems: 'center',
         justifyContent: 'center',
     },
-})``;
+})`
+    background: ${props => props.theme.colors.background};
+`;
 
 export const Title = styled(MyText)`
     font-size: 24px;
-    color: #f4ede8;
+    color: ${props => props.theme.colors.text};
     margin: 64px 0 24px;
 `;
 
@@ -34,26 +36,27 @@ export const Button = styled(MyButton)`
 `;
 
 export const ForgotPassword = styled(MyTextButton)`
+    color: ${props => props.theme.colors.text};
     margin-top: 24px;
     margin-bottom: 16px;
     font-size: 16px;
 `;
 
-export const CreateAccount = styled(MyTextButton).attrs({
+export const CreateAccount = styled(MyTextButton).attrs(props => ({
     buttonProps: {
         style: {
             justifyContent: 'center',
             marginTop: 'auto',
             alignSelf: 'stretch',
-            backgroundColor: '#312e38',
+            backgroundColor: props.theme.colors.background,
             paddingVertical: 16,
             borderTopWidth: 1,
-            borderColor: '#232129',
+            borderColor: props.theme.colors.li,
         },
     },
     iconProps: {
         color: '#ff9000',
     },
-})`
+}))`
     color: #ff9000;
 `;

@@ -6,4 +6,6 @@ export interface Provider {
     created_at: string;
     updated_at: string;
     avatar_url: string | null;
+    service: string;
+    price: number;
 }
