@@ -1,4 +1,4 @@
-import logo from '../../assets/LogoDark.png';
+import logo from '../../assets/LogoLight.png';
 
 export default {
     title: 'dark',

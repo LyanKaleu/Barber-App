@@ -9,6 +9,7 @@ import { Barber } from '../../@types';
 
 export const Container = styled(MyScreen)`
     flex: 1;
+    background: ${props => props.theme.colors.background};
 `;
 
 export const Header = styled.View`
@@ -42,12 +43,13 @@ export const ProvidersList = styled(FlatList<Barber>).attrs({
 })``;
 
 export const ProvidersListTitle = styled(MyText)`
-    color: #f4ede8;
+    color: ${props => props.theme.colors.text};
     font-size: 24px;
     margin-bottom: 24px;
 `;
 
 export const ProviderContainer = styled(MyButtonContainer)`
+    background: ${props => props.theme.colors.li};
     margin-bottom: 16px;
 `;
 
@@ -75,7 +77,7 @@ export const ProviderMetaText = styled(MyText)`
 `;
 
 export const EmptyMessage = styled(MyText)`
-    color: #f4ede8;
+    color: ${props => props.theme.colors.text};
     font-size: 16px;
     text-align: center;
     opacity: 0.5;

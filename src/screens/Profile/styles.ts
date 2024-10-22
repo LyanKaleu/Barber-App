@@ -13,6 +13,7 @@ export const Container = styled(MyScreen).attrs({
     },
 })`
     padding: 0 30px;
+    background: ${props => props.theme.colors.background};
 `;
 
 export const AvatarContainer = styled(MyButtonContainer)`
