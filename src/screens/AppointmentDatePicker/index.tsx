@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useContext } from 'react';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {
     eachDayOfInterval,
@@ -20,16 +20,15 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RefreshControl, ListRenderItemInfo } from 'react-native';
+import { RefreshControl, ListRenderItemInfo, Alert } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 
 import { upperCaseFirstLetter } from '../../utils/upperCaseFirstLetter';
 import api from '../../services/api';
-import alert from '../../utils/alert';
-import { useAuth } from '../../hooks/auth';
+import { getBarbers } from '../../lib/actions/user.actions';
 import { AppStackParams } from '../../routes/app.routes';
 
-import { DayAvailabilityItem, MonthAvailabilityItem, Provider } from './types';
+import { DayAvailabilityItem, MonthAvailabilityItem } from './types';
 import {
     Container,
     Header,
@@ -61,13 +60,14 @@ import {
     EmptyCalendarItem,
     LoadingCalendar,
 } from './styles';
-
 import { GlobalContext } from '../../context/GlobalProvider';
+import { Barber, Services } from '../../@types';
+import { createAppointment, getBarberDayAvailability, getBarberMonthAvailability } from '../../lib/actions/appointment.actions';
 
 const minimumDate = () => {
     const today = new Date();
 
-    if(getHours(today) >= 17) {
+    if (getHours(today) >= 17) {
         return addDays(today, 1);
     }
 
@@ -75,8 +75,8 @@ const minimumDate = () => {
 };
 
 const AppointmentDatePicker: React.FC = () => {
-    // const { user } = useAuth();
-    const { user } = React.useContext(GlobalContext);
+    const { loading, user } = useContext(GlobalContext);
+    const [barbers, setBarbers] = React.useState<Barber[]>([]);
 
     const route = useRoute<RouteProp<AppStackParams, 'AppointmentDatePicker'>>();
     const navigation =
@@ -85,7 +85,8 @@ const AppointmentDatePicker: React.FC = () => {
         >();
     const { providerId } = route.params;
 
-    const [selectedProviderId, setSelectedProviderId] = React.useState<string>(providerId);
+    const [selectedProviderId, setSelectedProviderId] = React.useState<string>(providerId || '');
+
     const [calendarDate, setCalendarDate] = React.useState(new Date());
 
     const [fetchingMonthAvailability, setFetchingMonthAvailability] = React.useState(false);
@@ -96,13 +97,16 @@ const AppointmentDatePicker: React.FC = () => {
 
     const [fetchingProviders, setFetchingProviders] = React.useState(false);
 
-    const [providers, setProviders] = React.useState<Provider[]>([]);
     const [dayAvailability, setDayAvailability] = React.useState<DayAvailabilityItem[]>([]);
     const [monthAvailability, setMonthAvailability] = React.useState<MonthAvailabilityItem[]>([]);
 
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth() + 1; // Mês é 0-indexed, então adicione 1
+    const day = selectedDate.getDate();
+    
     const selectedProvider = React.useMemo(() => {
-        return providers.find(provider => provider.id === selectedProviderId);
-    }, [providers, selectedProviderId]);
+        return barbers.find(provider => provider.accountId === selectedProviderId);
+    }, [barbers, selectedProviderId]);
 
     const calendarMonthText = React.useMemo(() => {
         return upperCaseFirstLetter(
@@ -151,10 +155,21 @@ const AppointmentDatePicker: React.FC = () => {
     const getProviders = React.useCallback(async () => {
         try {
             setFetchingProviders(true);
-            const { data } = await api.getProviders();
-            setProviders(data);
+            const barberList = await getBarbers(); // Chama a função que busca os barbeiros
+
+            // Mapeia os documentos para o tipo Barber antes de chamar setBarbers
+            const mappedBarbers: Barber[] = barberList.map((doc) => ({
+                accountId: doc.accountId,
+                username: doc.username,
+                email: doc.email,
+                phone: doc.phone,
+                role: doc.role,
+                avatar_url: doc.avatar,
+            }));
+
+            setBarbers(mappedBarbers);
         } catch {
-            alert({ title: 'Erro', message: 'Erro ao buscar lista de provedores' });
+            Alert.alert('Erro ao buscar lista de provedores');
         } finally {
             setFetchingProviders(false);
         }
@@ -163,14 +178,14 @@ const AppointmentDatePicker: React.FC = () => {
     const getProviderMonthAvailability = React.useCallback(async () => {
         try {
             setFetchingMonthAvailability(true);
-            const { data } = await api.getProviderMonthAvailability({
-                providerId: selectedProviderId,
-                year: getYear(calendarDate),
-                month: getMonth(calendarDate) + 1,
-            });
-            setMonthAvailability(data);
+            const monthData = await getBarberMonthAvailability(selectedProviderId, year, month);
+            const monthAvailability: MonthAvailabilityItem[] = Object.keys(monthData).map((day) => ({
+                day: parseInt(day), // Convertendo a chave para um número
+                available: monthData[day], // Pegando o valor booleano
+              }));
+            setMonthAvailability(monthAvailability);
         } catch {
-            alert({ title: 'Erro', message: 'Erro ao buscar dias disponíveis' });
+            Alert.alert('Erro ao buscar dias disponíveis');
         } finally {
             setFetchingMonthAvailability(false);
         }
@@ -179,16 +194,15 @@ const AppointmentDatePicker: React.FC = () => {
     const getProviderDayAvailability = React.useCallback(async () => {
         try {
             setFetchingDayAvailability(true);
-            const { data } = await api.getProviderDayAvailability({
-                providerId: selectedProviderId,
-                year: getYear(selectedDate),
-                month: getMonth(selectedDate) + 1,
-                day: getDate(selectedDate),
-            });
-            setDayAvailability(data);
+            const dayData = await getBarberDayAvailability(selectedProviderId, year, month, day);
+            const dayAvailability: DayAvailabilityItem[] = Object.keys(dayData).map((day) => ({
+                hour: parseInt(day), // Convertendo a chave para um número
+                available: dayData[day], // Pegando o valor booleano
+              }));
+            setDayAvailability(dayAvailability);
             setSelectedHour(0);
         } catch {
-            alert({ title: 'Erro', message: 'Erro ao buscar dias disponíveis' });
+            Alert.alert('Erro ao buscar dias disponíveis');
         } finally {
             setFetchingDayAvailability(false);
         }
@@ -206,31 +220,45 @@ const AppointmentDatePicker: React.FC = () => {
         getProviderDayAvailability();
     }, [getProviderDayAvailability]);
 
-    const handleSelectProvider = React.useCallback((provider: Provider) => {
-        setSelectedProviderId(provider.id);
-    }, []);
+   const handleSelectProvider = React.useCallback((provider: Barber) => {
+    setSelectedProviderId(provider.accountId);
+}, []);
 
     const handleCreateAppointment = React.useCallback(async () => {
         try {
             const appointmentDate = new Date(selectedDate);
-
             appointmentDate.setHours(selectedHour);
             appointmentDate.setMinutes(0);
+            appointmentDate.setMilliseconds(0);
 
-            await api.createAppointment({
-                provider_id: selectedProviderId,
-                date: appointmentDate,
-            });
+            // Ajusta o horário para o horário local (removendo o fuso horário)
+            const localTime = new Date(appointmentDate.getTime() - appointmentDate.getTimezoneOffset() * 60000);
+            
+           console.log(selectedProviderId);
+           
+            const appointmentData = {
+                barberId: selectedProviderId,
+                schedule: localTime.toISOString(), // Converte para string ISO
+                clientId: user?.id,
+                status: "Agendado",
+                service: "Corte de cabelo",
+                note: "Quero um corte degrader"
+            };
 
+           
+
+            // Chama a função para criar o agendamento
+            const newAppointment = await createAppointment(appointmentData);
+            console.log('Agendamento criado com sucesso:', newAppointment);
+
+            // Navega para a tela de agendamento criado
             navigation.navigate('AppointmentCreated', {
                 date: appointmentDate.getTime(),
                 provider: selectedProvider,
             });
         } catch (error) {
-            alert({
-                title: 'Erro ao criar agendamento',
-                message: 'Ocorreu um erro ao tentar criar o agendamento, tente novamente!',
-            });
+            console.error(error);
+            Alert.alert('Ocorreu um erro ao tentar criar o agendamento, tente novamente!');
         }
     }, [
         selectedDate,
@@ -238,6 +266,7 @@ const AppointmentDatePicker: React.FC = () => {
         selectedProviderId,
         navigation,
         selectedProvider,
+        user
     ]);
 
     const morningAvailability = React.useMemo(() => {
@@ -261,24 +290,24 @@ const AppointmentDatePicker: React.FC = () => {
     }, [dayAvailability]);
 
     const renderProvider = React.useCallback(
-        (info: ListRenderItemInfo<Provider>) => {
+        (info: ListRenderItemInfo<Barber>) => {
             const { item: provider } = info;
 
             return (
                 <ProviderContainer
-                    selected={provider.id === selectedProviderId}
+                    selected={provider.accountId === selectedProviderId}
                     onPress={() => {
                         handleSelectProvider(provider);
                     }}>
-                        <ProviderAvatar
-                            size={32}
-                            nome={provider.name}
-                            source={{ uri: provider.avatar_url || undefined }}
-                        />
-                        <ProviderName bold selected={provider.id === selectedProviderId}>
-                            {provider.name}
-                        </ProviderName>
-                    </ProviderContainer>
+                    <ProviderAvatar
+                        size={32}
+                        nome={provider?.username}
+                        source={{ uri: provider.avatar_url || undefined }}
+                    />
+                    <ProviderName bold selected={provider.accountId === selectedProviderId}>
+                        {provider?.username}
+                    </ProviderName>
+                </ProviderContainer>
             );
         },
         [handleSelectProvider, selectedProviderId],
@@ -300,142 +329,142 @@ const AppointmentDatePicker: React.FC = () => {
                     }}
                 />
             }>
-                <Header>
-                    <BackButton onPress={() => navigation.goBack()}>
-                        <FeatherIcon name="chevron-left" size={24} color="#999591" />
-                    </BackButton>
-                    <HeaderTitle bold>Cabelereiros</HeaderTitle>
+            <Header>
+                <BackButton onPress={() => navigation.goBack()}>
+                    <FeatherIcon name="chevron-left" size={24} color="#999591" />
+                </BackButton>
+                <HeaderTitle bold>Agendamento</HeaderTitle>
 
-                    <UserAvatar
-                        size={56}
-                        nome={user?.username}
-                        source={{ uri: user.avatar_url || undefined }}
+                <UserAvatar
+                    size={56}
+                    nome={user?.username || "Usuário"}
+                    source={{ uri: user?.avatar_url || undefined }}
+                />
+            </Header>
+
+            <ProvidersListContainer>
+                <ProvidersList
+                    data={barbers as Barber[] || undefined}
+                    keyExtractor={provider => provider.accountId}
+                    renderItem={renderProvider}
+                />
+            </ProvidersListContainer>
+
+            <Calendar>
+                <Title bold>Escolha a data</Title>
+
+                <CalendarHeader>
+                    <CalendarIconButton
+                        highlight={selectedDateCalendarDateDifference > 0}
+                        name="arrow-left"
+                        onPress={() => {
+                            setFetchingMonthAvailability(true);
+                            setCalendarDate(subMonths(calendarDate, 1));
+                        }}
                     />
-                </Header>
-
-                <ProvidersListContainer>
-                    <ProvidersList
-                        data={providers as Provider[]}
-                        keyExtractor={provider => provider.id}
-                        renderItem={renderProvider}
+                    <CalendarMonth bold>{calendarMonthText}</CalendarMonth>
+                    <CalendarIconButton
+                        highlight={selectedDateCalendarDateDifference < 0}
+                        name="arrow-right"
+                        onPress={() => {
+                            setFetchingMonthAvailability(true);
+                            setCalendarDate(addMonths(calendarDate, 1));
+                        }}
                     />
-                </ProvidersListContainer>
+                </CalendarHeader>
 
-                <Calendar>
-                    <Title bold>Escolha a data</Title>
+                <CalendarContent>
+                    {fetchingMonthAvailability && <LoadingCalendar />}
+                    {calendar.map((week, index) => {
+                        const selectedWeekDay = getDay(selectedDate);
+                        const selectedMonth = getMonth(selectedDate);
+                        const weekDayLetter = week[1]
+                            ? format(week[1], 'E', { locale: ptBR })[0].toUpperCase()
+                            : '';
 
-                    <CalendarHeader>
-                        <CalendarIconButton
-                            highlight={selectedDateCalendarDateDifference > 0}
-                            name="arrow-left"
-                            onPress={() => {
-                                setFetchingMonthAvailability(true);
-                                setCalendarDate(subMonths(calendarDate, 1));
-                            }}
-                        />
-                        <CalendarMonth bold>{calendarMonthText}</CalendarMonth>
-                        <CalendarIconButton
-                            highlight={selectedDateCalendarDateDifference < 0}
-                            name="arrow-right"
-                            onPress={() => {
-                                setFetchingMonthAvailability(true);
-                                setCalendarDate(addMonths(calendarDate, 1));
-                            }}
-                        />
-                    </CalendarHeader>
+                        const activeWeekLetter =
+                            selectedWeekDay === Number(index) &&
+                            selectedMonth === getMonth(calendarDate);
 
-                    <CalendarContent>
-                        {fetchingMonthAvailability && <LoadingCalendar />}
-                        {calendar.map((week, index) => {
-                            const selectedWeekDay = getDay(selectedDate);
-                            const selectedMonth = getMonth(selectedDate);
-                            const weekDayLetter = week[1]
-                                ? format(week[1], 'E', { locale: ptBR })[0].toUpperCase()
-                                : '';
+                        return (
+                            <CalendarColumn key={index}>
+                                <CalendarWeekLetter active={activeWeekLetter}>
+                                    {weekDayLetter}
+                                </CalendarWeekLetter>
+                                {week.map((date, i) => {
+                                    if (date && !fetchingMonthAvailability) {
+                                        const day = getDate(date);
+                                        const disabled = !monthAvailability.find(monthItem => {
+                                            return monthItem.day === day;
+                                        })?.available;
 
-                            const activeWeekLetter =
-                                selectedWeekDay === Number(index) &&
-                                selectedMonth === getMonth(calendarDate);
+                                        return (
+                                            <CalendarDateItem
+                                                key={date.toString()}
+                                                disabled={disabled || fetchingMonthAvailability}
+                                                onPress={() => {
+                                                    setSelectedDate(date);
+                                                }}
+                                                active={isSameDay(date, selectedDate)}
+                                            >{day}</CalendarDateItem>
+                                        );
+                                    }
+                                    return <EmptyCalendarItem key={i} />;
+                                })}
+                            </CalendarColumn>
+                        );
+                    })}
+                </CalendarContent>
+            </Calendar>
 
-                            return (
-                                <CalendarColumn key={index}>
-                                    <CalendarWeekLetter active={activeWeekLetter}>
-                                        {weekDayLetter}
-                                    </CalendarWeekLetter>
-                                    {week.map((date, i) => {
-                                        if (date && !fetchingMonthAvailability) {
-                                            const day = getDate(date);
-                                            const disabled = !monthAvailability.find(monthItem => {
-                                                return monthItem.day === day;
-                                            })?.available;
+            <Schedule>
+                <Title>Escolha o horário</Title>
 
-                                            return (
-                                                <CalendarDateItem
-                                                    key={date.toString()}
-                                                    disabled={disabled || fetchingMonthAvailability}
-                                                    onPress={() => {
-                                                        setSelectedDate(date);
-                                                    }}
-                                                    active={isSameDay(date, selectedDate)}
-                                                >{day}</CalendarDateItem>
-                                            );
-                                        }
-                                        return <EmptyCalendarItem key={i} />;
-                                    })}
-                                </CalendarColumn>
-                            );
-                        })}
-                    </CalendarContent>
-                </Calendar>
+                <Section>
+                    <SectionTitle>Manhã</SectionTitle>
 
-                <Schedule>
-                    <Title>Escolha o horário</Title>
+                    <SectionContent>
+                        {morningAvailability.map(({ hourFormatted, hour, available }) => (
+                            <Hour
+                                available={available}
+                                selected={hour === selectedHour}
+                                onPress={() => setSelectedHour(hour)}
+                                key={hourFormatted}
+                            >
+                                <HourText selected={hour === selectedHour}>
+                                    {hourFormatted}
+                                </HourText>
+                            </Hour>
+                        ))}
+                    </SectionContent>
+                </Section>
 
-                    <Section>
-                        <SectionTitle>Manhã</SectionTitle>
+                <Section>
+                    <SectionTitle>Tarde</SectionTitle>
 
-                        <SectionContent>
-                            {morningAvailability.map(({ hourFormatted, hour, available }) => (
-                                <Hour
-                                    available={available}
-                                    selected={hour === selectedHour}
-                                    onPress={() => setSelectedHour(hour)}
-                                    key={hourFormatted}
-                                >
-                                    <HourText selected={hour === selectedHour}>
-                                        {hourFormatted}
-                                    </HourText>
-                                </Hour>
-                            ))}
-                        </SectionContent>
-                    </Section>
+                    <SectionContent>
+                        {afternoonAvailability.map(({ hourFormatted, hour, available }) => (
+                            <Hour
+                                available={available}
+                                selected={hour === selectedHour}
+                                onPress={() => setSelectedHour(hour)}
+                                key={hourFormatted}
+                            >
+                                <HourText selected={hour === selectedHour}>
+                                    {hourFormatted}
+                                </HourText>
+                            </Hour>
+                        ))}
+                    </SectionContent>
+                </Section>
+            </Schedule>
 
-                    <Section>
-                        <SectionTitle>Tarde</SectionTitle>
-
-                        <SectionContent>
-                            {morningAvailability.map(({ hourFormatted, hour, available }) => (
-                                <Hour
-                                    available={available}
-                                    selected={hour === selectedHour}
-                                    onPress={() => setSelectedHour(hour)}
-                                    key={hourFormatted}
-                                >
-                                    <HourText selected={hour === selectedHour}>
-                                        {hourFormatted}
-                                    </HourText>
-                                </Hour>
-                            ))}
-                        </SectionContent>
-                    </Section>
-                </Schedule>
-
-                <CreateAppointmentButton
-                    onPress={handleCreateAppointment}
-                    enabled={!!selectedDate && !!selectedProviderId && !!selectedHour}>
-                        Agendar
-                    </CreateAppointmentButton>
-            </Container>
+            <CreateAppointmentButton
+                onPress={handleCreateAppointment}
+                enabled={!!selectedDate && !!selectedProviderId && !!selectedHour}>
+                Agendar
+            </CreateAppointmentButton>
+        </Container>
     );
 };
 

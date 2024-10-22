@@ -1,5 +1,6 @@
 import { ID, Query } from "react-native-appwrite";
 import { account, appwriteConfig, avatars, databases } from "../appwrite.config";
+import { CreateUserParams } from "../../@types";
 
 export async function createUser(user: CreateUserParams) {
   try {
@@ -126,5 +127,23 @@ export async function passwordRecovery(email: string) {
   }, function (error) {
       console.log(error); // Failure
   });
+}
 
+export async function getBarbers() {
+  try {
+    const response = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      [Query.equal("role", "barber")] // Filtra usuários onde o campo "role" é "barber"
+    );
+
+    if (!response || response.documents.length === 0) {
+      throw new Error("No barbers found");
+    }
+
+    return response.documents;
+  } catch (error) {
+    console.error("Error fetching barbers:", error);
+    return [];
+  }
 }

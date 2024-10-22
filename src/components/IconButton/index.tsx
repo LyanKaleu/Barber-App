@@ -12,8 +12,8 @@ interface IconButtonProps extends BorderlessButtonProperties {
 
 const IconButton: React.FC<IconButtonProps> = ({
     name,
-    size,
-    color,
+    size = 20,
+    color = '#999591',
     children,
     ...rest
 }) => {
@@ -23,11 +23,6 @@ const IconButton: React.FC<IconButtonProps> = ({
             {children}
         </Container>
     );
-};
-
-IconButton.defaultProps = {
-    size: 20,
-    color: '#999591',
 };
 
 export default IconButton;

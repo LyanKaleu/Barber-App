@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import IconButton from '../components/IconButton';
@@ -7,7 +7,9 @@ import Profile from '../screens/Profile';
 import AppointmentDatePicker from '../screens/AppointmentDatePicker';
 import AppointmentCreated from '../screens/AppointmentCreated';
 import alert from '../utils/alert';
-import { signOut } from '../lib/actions/client.actions';
+import { signOut } from '../lib/actions/user.actions';
+import { GlobalContext } from '../context/GlobalProvider';
+import { Alert } from 'react-native';
 
 export type AppStackParams = {
     Dashboard: undefined;
@@ -17,7 +19,7 @@ export type AppStackParams = {
     AppointmentCreated: {
         date: number;
         provider?: {
-            name: string;
+            username: string;
         };
     };
     Profile: undefined;
@@ -25,8 +27,18 @@ export type AppStackParams = {
 
 const AppStack = createStackNavigator<AppStackParams>();
 
-function AuthRoutes() {
 
+
+  
+function AuthRoutes() {
+    const { setUser, setIsLogged } = useContext(GlobalContext);
+    
+    const logout = async () => {
+    await signOut();
+    setUser(null);
+    setIsLogged(false);
+  };
+  
     return (
         <AppStack.Navigator
             screenOptions={{
@@ -70,29 +82,35 @@ function AuthRoutes() {
                         ),
                         headerRight: () => (
                             <IconButton
-                                name='power'
-                                size={28}
-                                style={{
-                                    borderWidth: 1,
-                                    flex: 1,
-                                    paddingHorizontal: 24,
-                                }}
-                                onPress={() => {
-                                    alert({
-                                        title: 'Logout',
-                                        message: 'Tem certeza que deseja sair?',
-                                        buttons: [
-                                            { text: 'Cancelar', style: 'cancel' },
-                                            {
-                                                text: 'Confirmar',
-                                                style: 'destructive',
-                                                onPress: signOut,
-                                            },
-                                        ],
-                                    });
-                                }}
+                              name="power"
+                              size={28}
+                              style={{
+                                borderWidth: 1,
+                                flex: 1,
+                                paddingHorizontal: 24,
+                              }}
+                              onPress={() => {
+                                Alert.alert(
+                                  'Confirmação',
+                                  'Tem certeza que deseja sair?',
+                                  [
+                                    {
+                                      text: 'Cancelar',
+                                      style: 'cancel',
+                                    },
+                                    {
+                                      text: 'Confirmar',
+                                      style: 'destructive',
+                                      onPress: () => {
+                                        logout();
+                                      },
+                                    },
+                                  ],
+                                  { cancelable: true }
+                                );
+                              }}
                             />
-                        ),
+                          ),                          
                     })}
                 />
             </AppStack.Navigator>

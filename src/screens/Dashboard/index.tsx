@@ -1,11 +1,6 @@
-import * as React from 'react';
+import React, { useContext } from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-import { GlobalContext } from '../../context/GlobalProvider';
-import alert from '../../utils/alert';
-import api from '../../services/api';
-import { useAuth } from '../../hooks/auth';
-import { Provider } from './types';
 import { AppStackParams } from '../../routes/app.routes';
 
 import {
@@ -25,69 +20,38 @@ import {
     UserAvatar,
     EmptyMessage,
 } from './styles';
+import { GlobalContext } from "../../context/GlobalProvider";
+import { getBarbers } from '../../lib/actions/user.actions';
+import { Alert } from 'react-native';
+import { Barber } from '../../@types';
 
 const Dashboard: React.FC = () => {
-    const { user } = React.useContext(GlobalContext);
-
+    const { loading, user } = useContext(GlobalContext);
+    
     const navigation = useNavigation<NavigationProp<AppStackParams>>();
 
-    const [providers, setProviders] = React.useState<Provider[]>([]);
     const [fetching, setFetching] = React.useState(false);
-
+    const [barbers, setBarbers] = React.useState<Barber[]>([]);
+    
     const getProviders = React.useCallback(async () => {
         try {
             setFetching(true);
-            // const { data } = await api.getProviders();
-            // Lista de provedores fictícios
-            const data: Provider[] = [
-                { 
-                    id: '1', 
-                    name: 'Barbeiro 1', 
-                    email: 'barbeiro1@example.com',
-                    avatar: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    avatar_url: 'https://example.com/avatar1.png',
-                    service: 'Corte de cabelo',
-                    price: 30.00, 
-                },
-                { 
-                    id: '2', 
-                    name: 'Barbeiro 2', 
-                    email: 'barbeiro2@example.com',
-                    avatar: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    avatar_url: 'https://example.com/avatar2.png' ,
-                    service: 'Barba',
-                    price: 20.00,
-                },
-                { 
-                    id: '3', 
-                    name: 'Barbeiro 3', 
-                    email: 'barbeiro3@example.com',
-                    avatar: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    avatar_url: 'https://example.com/avatar3.png',
-                    service: 'Corte de cabelo e barba',
-                    price: 45.00, 
-                },
-                { 
-                    id: '4', 
-                    name: 'Barbeiro 4', 
-                    email: 'barbeiro4@example.com',
-                    avatar: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    avatar_url: 'https://example.com/avatar4.png',
-                    service: 'Corte de cabelo',
-                    price: 30.00, 
-                },
-            ];
-            setProviders(data);
+           
+            const barberList = await getBarbers(); // Chama a função que busca os barbeiros
+
+            // Mapeia os documentos para o tipo Barber antes de chamar setBarbers
+            const mappedBarbers: Barber[] = barberList.map((doc) => ({
+                accountId: doc.accountId,
+                username: doc.username,
+                email: doc.email,
+                phone: doc.phone,
+                role: doc.role,
+                avatar_url: doc.avatar,
+            }));
+
+            setBarbers(mappedBarbers); 
         } catch {
-            alert({ title: 'Erro', message: 'Erro ao buscar lista de provedores' });
+            Alert.alert('Erro ao buscar lista de provedores');
         } finally {
             setFetching(false);
         }
@@ -103,7 +67,7 @@ const Dashboard: React.FC = () => {
         },
         [navigation],
     );
-
+      
     return (
         <Container safeTop statusBarProps={{ backgroundColor: '#28262e' }}>
             <Header>
@@ -116,15 +80,14 @@ const Dashboard: React.FC = () => {
                 <ProfileButton onPress={() => navigation.navigate('Profile')}>
                     <UserAvatar
                         size={56}
-                        source={{ uri: user.avatar_url || undefined }}
-                        nome={user?.username}
+                        source={{ uri: user?.avatar_url || undefined }}
+                        nome={user?.username || "Usuário"}
                     />
                 </ProfileButton>
             </Header>
-
             <ProvidersList
-                data={providers}
-                keyExtractor={provider => provider.id}
+                data={barbers}
+                keyExtractor={provider => provider.accountId}
                 onRefresh={getProviders}
                 refreshing={fetching}
                 ListHeaderComponent={
@@ -142,34 +105,26 @@ const Dashboard: React.FC = () => {
                 renderItem={({ item: provider }) => (
                     <ProviderContainer
                         onPress={() => {
-                            handleSelectProvider(provider.id);
+                            handleSelectProvider(provider.accountId);
                         }}>
-                            <ProviderAvatar
-                                size={72}
-                                nome={provider.name}
-                                source={{ uri: provider.avatar_url || undefined }}
-                            />
+                        <ProviderAvatar
+                            size={72}
+                            nome={provider?.username}
+                            source={{ uri: provider?.avatar_url || undefined }}
+                        />
 
-                            <ProviderInfo>
-                                <ProviderName>{provider.name}</ProviderName>
-                                <ProviderMeta>
-                                    <FeatherIcon name="calendar" size={14} color="#ff9000" />
-                                    <ProviderMetaText>Segunda à sexta</ProviderMetaText>
-                                </ProviderMeta>
-                                <ProviderMeta>
-                                    <FeatherIcon name="clock" size={14} color="#ff9000" />
-                                    <ProviderMetaText>8h às 18h</ProviderMetaText>
-                                </ProviderMeta>
-                                <ProviderMeta>
-                                    <FeatherIcon name="scissors" size={14} color="#ff9000" />
-                                    <ProviderMetaText>{provider.service}</ProviderMetaText>
-                                </ProviderMeta>
-                                <ProviderMeta>
-                                    <FeatherIcon name="dollar-sign" size={14} color="#ff9000" />
-                                    <ProviderMetaText>R$ {provider.price.toFixed(2)}</ProviderMetaText>
-                                </ProviderMeta>
-                            </ProviderInfo>
-                        </ProviderContainer>
+                        <ProviderInfo>
+                            <ProviderName>{provider?.username}</ProviderName>
+                            <ProviderMeta>
+                                <FeatherIcon name="calendar" size={14} color="#ff9000" />
+                                <ProviderMetaText>Segunda à sexta</ProviderMetaText>
+                            </ProviderMeta>
+                            <ProviderMeta>
+                                <FeatherIcon name="clock" size={14} color="#ff9000" />
+                                <ProviderMetaText>8h às 18h</ProviderMetaText>
+                            </ProviderMeta>
+                        </ProviderInfo>
+                    </ProviderContainer>
                 )}
             />
         </Container>

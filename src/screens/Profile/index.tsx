@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useContext } from 'react';
 import { View, TextInput, ActivityIndicator } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Form } from '@unform/mobile';
@@ -27,9 +27,10 @@ import {
     AvatarIconContainer,
 } from './styles';
 import { ImageDTO, ProfileFormData } from './types';
+import { GlobalContext } from '../../context/GlobalProvider';
 
 const Profile: React.FC = () => {
-    const { user, updateUser } = useAuth();
+    const { loading, user } = useContext(GlobalContext);
     const { showActionSheetWithOptions } = useActionSheet();
 
     const [updatingAvatar, setUpdatingAvatar] = React.useState(false);
@@ -117,9 +118,7 @@ const Profile: React.FC = () => {
 
                 formData.append('avatar', blob, filename);
 
-                const response = await api.updateAvatar(formData);
 
-                updateUser(response.data);
             } catch (error: any) {
                 alert({
                     title: 'Erro',
@@ -129,7 +128,7 @@ const Profile: React.FC = () => {
                 setUpdatingAvatar(false);
             }
         },
-        [updateUser],
+        [],
     );
 
     const handleOpenPicker = async (selectType: 'image' | 'video') => {
@@ -161,7 +160,6 @@ const Profile: React.FC = () => {
             setUpdatingAvatar(true);
             await api.removerAvatar();
 
-            updateUser({ ...user, avatar: null, avatar_url: null });
         } catch (error) {
             alert({
                 title: 'Erro',
@@ -170,7 +168,7 @@ const Profile: React.FC = () => {
         } finally {
             setUpdatingAvatar(false);
         }
-    }, [updateUser, user]);
+    }, [ user]);
 
     function handleShowActionSheet() {
         const options = [
@@ -204,8 +202,8 @@ const Profile: React.FC = () => {
             <AvatarContainer onPress={handleShowActionSheet}>
                 <Avatar
                     size={186}
-                    nome={user.name}
-                    source={{ uri: user.avatar_url || undefined }}
+                    nome={user?.username}
+                    source={{ uri: user?.avatar_url || undefined }}
                 />
                 <AvatarIconContainer>
                     {updatingAvatar ? (
