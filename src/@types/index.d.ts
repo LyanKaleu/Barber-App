@@ -14,8 +14,8 @@ declare interface User {
     email: string;
     username: string;
     phone: string;
-    avatar_url: res.avatar  
-  };
+    avatar_url: string;
+  }
   
 declare interface GlobalContextType{
     isLogged: boolean;
@@ -23,7 +23,7 @@ declare interface GlobalContextType{
     user: User | null;
     setUser: (user: User | null) => void;
     loading: boolean;
-  };
+  }
 
   export interface Barber {
     accountId: string;

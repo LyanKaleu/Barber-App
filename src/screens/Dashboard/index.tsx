@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import * as React from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { AppStackParams } from '../../routes/app.routes';
@@ -26,7 +26,7 @@ import { Alert } from 'react-native';
 import { Barber } from '../../@types';
 
 const Dashboard: React.FC = () => {
-    const { loading, user } = useContext(GlobalContext);
+    const { loading, user } = React.useContext(GlobalContext);
     
     const navigation = useNavigation<NavigationProp<AppStackParams>>();
 
@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
             </Header>
             <ProvidersList
                 data={barbers}
-                keyExtractor={provider => provider.accountId}
+                keyExtractor={(provider: { accountId: any; }) => provider.accountId}
                 onRefresh={getProviders}
                 refreshing={fetching}
                 ListHeaderComponent={
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
                         </EmptyMessage>
                     ) : undefined
                 }
-                renderItem={({ item: provider }) => (
+                renderItem={({ item: provider }: { item: Barber }) => (
                     <ProviderContainer
                         onPress={() => {
                             handleSelectProvider(provider.accountId);

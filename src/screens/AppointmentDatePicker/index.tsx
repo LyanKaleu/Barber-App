@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import * as React from 'react';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {
     eachDayOfInterval,
@@ -75,7 +75,7 @@ const minimumDate = () => {
 };
 
 const AppointmentDatePicker: React.FC = () => {
-    const { loading, user } = useContext(GlobalContext);
+    const { loading, user } = React.useContext(GlobalContext);
     const [barbers, setBarbers] = React.useState<Barber[]>([]);
 
     const route = useRoute<RouteProp<AppStackParams, 'AppointmentDatePicker'>>();
@@ -101,7 +101,7 @@ const AppointmentDatePicker: React.FC = () => {
     const [monthAvailability, setMonthAvailability] = React.useState<MonthAvailabilityItem[]>([]);
 
     const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1; // Mês é 0-indexed, então adicione 1
+    const month = calendarDate.getMonth() + 1; // Mês é 0-indexed, então adicione 1
     const day = selectedDate.getDate();
     
     const selectedProvider = React.useMemo(() => {
@@ -145,7 +145,7 @@ const AppointmentDatePicker: React.FC = () => {
             return days;
         });
     }, [calendarDate]);
-
+    
     const selectedDateCalendarDateDifference = React.useMemo(() => {
         return isSameMonth(calendarDate, selectedDate)
             ? 0
@@ -179,9 +179,9 @@ const AppointmentDatePicker: React.FC = () => {
         try {
             setFetchingMonthAvailability(true);
             const monthData = await getBarberMonthAvailability(selectedProviderId, year, month);
-            const monthAvailability: MonthAvailabilityItem[] = Object.keys(monthData).map((day) => ({
-                day: parseInt(day), // Convertendo a chave para um número
-                available: monthData[day], // Pegando o valor booleano
+            const monthAvailability: MonthAvailabilityItem[] = monthData.availableDays.map((dayItem) => ({
+                day: dayItem.day, // Acessa o dia
+                available: dayItem.available // Acessa a disponibilidade
               }));
             setMonthAvailability(monthAvailability);
         } catch {
@@ -195,9 +195,9 @@ const AppointmentDatePicker: React.FC = () => {
         try {
             setFetchingDayAvailability(true);
             const dayData = await getBarberDayAvailability(selectedProviderId, year, month, day);
-            const dayAvailability: DayAvailabilityItem[] = Object.keys(dayData).map((day) => ({
-                hour: parseInt(day), // Convertendo a chave para um número
-                available: dayData[day], // Pegando o valor booleano
+            const dayAvailability: DayAvailabilityItem[] = dayData.availableSlots.map((slot) => ({
+                hour: slot.hour, // Acessa a hora
+                available: slot.available // Acessa a disponibilidade
               }));
             setDayAvailability(dayAvailability);
             setSelectedHour(0);
@@ -219,10 +219,9 @@ const AppointmentDatePicker: React.FC = () => {
     React.useEffect(() => {
         getProviderDayAvailability();
     }, [getProviderDayAvailability]);
-
-   const handleSelectProvider = React.useCallback((provider: Barber) => {
-    setSelectedProviderId(provider.accountId);
-}, []);
+     const handleSelectProvider = React.useCallback((provider: Barber) => {
+        setSelectedProviderId(provider.accountId);
+    }, []);
 
     const handleCreateAppointment = React.useCallback(async () => {
         try {
@@ -233,8 +232,6 @@ const AppointmentDatePicker: React.FC = () => {
 
             // Ajusta o horário para o horário local (removendo o fuso horário)
             const localTime = new Date(appointmentDate.getTime() - appointmentDate.getTimezoneOffset() * 60000);
-            
-           console.log(selectedProviderId);
            
             const appointmentData = {
                 barberId: selectedProviderId,
@@ -245,11 +242,8 @@ const AppointmentDatePicker: React.FC = () => {
                 note: "Quero um corte degrader"
             };
 
-           
-
             // Chama a função para criar o agendamento
             const newAppointment = await createAppointment(appointmentData);
-            console.log('Agendamento criado com sucesso:', newAppointment);
 
             // Navega para a tela de agendamento criado
             navigation.navigate('AppointmentCreated', {
@@ -271,7 +265,7 @@ const AppointmentDatePicker: React.FC = () => {
 
     const morningAvailability = React.useMemo(() => {
         return dayAvailability
-            .filter(({ hour }) => hour < 12)
+            .filter(({ hour }) => hour < 13)
             .map(({ hour, available }) => ({
                 hour,
                 hourFormatted: format(new Date().setHours(hour), 'HH:00'),
@@ -281,7 +275,7 @@ const AppointmentDatePicker: React.FC = () => {
 
     const afternoonAvailability = React.useMemo(() => {
         return dayAvailability
-            .filter(({ hour }) => hour >= 12)
+            .filter(({ hour }) => hour >= 13)
             .map(({ hour, available }) => ({
                 hour,
                 hourFormatted: format(new Date().setHours(hour), 'HH:00'),
@@ -345,7 +339,7 @@ const AppointmentDatePicker: React.FC = () => {
             <ProvidersListContainer>
                 <ProvidersList
                     data={barbers as Barber[] || undefined}
-                    keyExtractor={provider => provider.accountId}
+                    keyExtractor={(provider: { accountId: any; }) => provider.accountId}
                     renderItem={renderProvider}
                 />
             </ProvidersListContainer>

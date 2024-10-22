@@ -14,7 +14,7 @@ export const appwriteConfig = {
     storageId: "66f80b59000e103637dc",
     databaseId: "66fd8e00003adfe554bf",
     userCollectionId: "66fd8e2f000daf3bf263",
-    schedulingCollectionId: "6707d9d1000149080422"
+    schedulingCollectionId: "6717ad14001aaf52e7f8"
 };
 
 const client = new Client();
