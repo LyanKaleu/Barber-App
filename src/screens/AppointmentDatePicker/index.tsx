@@ -145,7 +145,7 @@ const AppointmentDatePicker: React.FC = () => {
             return days;
         });
     }, [calendarDate]);
-    
+
     const selectedDateCalendarDateDifference = React.useMemo(() => {
         return isSameMonth(calendarDate, selectedDate)
             ? 0

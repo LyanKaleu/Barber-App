@@ -29,6 +29,8 @@ export async function getBarberMonthAvailability(
 
     const daysInMonth = new Date(year, month, 0).getDate(); // Total de dias no mês
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas o dia
+    const currentHour = new Date().getHours(); // Hora atual
 
     try {
         const response = await databases.listDocuments(
@@ -45,26 +47,24 @@ export async function getBarberMonthAvailability(
         const occupiedHoursByDay: { [day: number]: Set<number> } = {};
         response.documents.forEach(appointment => {
             const appointmentDate = new Date(appointment.schedule);
-
             const hour = appointmentDate.getUTCHours(); 
-
             const day = appointmentDate.getDate();
-
+            
             if (!occupiedHoursByDay[day]) {
                 occupiedHoursByDay[day] = new Set<number>();
             }
             occupiedHoursByDay[day].add(hour);
         });
 
-        
         // Verificar disponibilidade para cada dia do mês
         for (let day = 1; day <= daysInMonth; day++) {
             const selectedDate = new Date(year, month - 1, day);
-  
+            selectedDate.setHours(0, 0, 0, 0); // Zera as horas para a comparação
+
+            const occupiedHours = occupiedHoursByDay[day] || new Set<number>(); // Inicializar aqui também
+
             // Se o dia já passou, marca como indisponível
             if (selectedDate < today) {
-                console.log(day);
-                
                 availability.availableDays.push({
                     day,
                     available: false
@@ -72,10 +72,18 @@ export async function getBarberMonthAvailability(
                 continue;
             }
 
-            const occupiedHours = occupiedHoursByDay[day] || new Set<number>();
+            // Se for o dia de hoje, considera também as horas já passadas como ocupadas
+            if (selectedDate.getTime() === today.getTime()) {
+                for (let hour = 8; hour <= 17; hour++) {
+                    if (hour < currentHour) {
+                        occupiedHours.add(hour); // Adiciona as horas que já passaram ao Set de horas ocupadas
+                    }
+                }
+            }
 
-            // Se nem todos os horários estiverem ocupados, o dia está disponível
-            const allHoursOccupied = occupiedHours.size >= 9; // Exemplo: dia tem 9 horários (9h-17h)
+            // Se todos os horários estiverem ocupados, o dia está indisponível
+            const allHoursOccupied = occupiedHours.size >= 9; // Exemplo: dia tem 9 horários (8h-17h)
+
             availability.availableDays.push({
                 day,
                 available: !allHoursOccupied // O dia fica indisponível apenas se todos os horários estiverem ocupados
@@ -90,7 +98,6 @@ export async function getBarberMonthAvailability(
 }
 
 
-
 // Função para buscar a disponibilidade diária do barbeiro
 export async function getBarberDayAvailability(
     barberId: string,
@@ -102,7 +109,8 @@ export async function getBarberDayAvailability(
 
     // Obter a data atual e ajustar para o horário local
     const today = new Date();
-    const currentHour = today.getHours(); // Hora atual no fuso local
+    today.setHours(0, 0, 0, 0); // Zera as horas para comparação somente de datas
+    const currentHour = new Date().getHours(); // Hora atual no fuso local
     const selectedDate = new Date(year, month - 1, day);
 
     // Bloquear automaticamente se o dia já passou
@@ -137,14 +145,16 @@ export async function getBarberDayAvailability(
             occupiedHours.add(hour); // Adiciona a hora ao Set
         });
 
-        // Verificar disponibilidade para cada horário do dia (exemplo das 9h às 17h)
+        // Verificar disponibilidade para cada horário do dia (exemplo das 8h às 17h)
         for (let hour = 8; hour <= 17; hour++) {
-            if (selectedDate.getDate() === today.getDate() && hour <= currentHour) {
+            if (selectedDate.getTime() === today.getTime() && hour <= currentHour) {
+                // Se for o dia de hoje, bloqueia os horários até a hora atual
                 availability.availableSlots.push({
                     hour,
                     available: false // Bloqueia horários passados no dia de hoje
                 });
             } else {
+                // Para dias futuros ou horas futuras no dia de hoje
                 availability.availableSlots.push({
                     hour,
                     available: !occupiedHours.has(hour) // Marca como disponível se não estiver ocupado
@@ -158,4 +168,3 @@ export async function getBarberDayAvailability(
         return { availableSlots: [] };
     }
 }
-
