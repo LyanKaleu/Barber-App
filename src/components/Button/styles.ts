@@ -16,7 +16,7 @@ export const Container = styled(RectButton)`
 `;
 
 export const Text = styled(MyText)`
-    color: #312e38;
+    color: ${props => props.theme.colors.primary};
     font-size: 18px;
 `;
 

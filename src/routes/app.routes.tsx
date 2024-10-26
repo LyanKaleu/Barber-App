@@ -10,6 +10,7 @@ import alert from '../utils/alert';
 import { signOut } from '../lib/actions/user.actions';
 import { GlobalContext } from '../context/GlobalProvider';
 import { Alert } from 'react-native';
+import { useTheme } from 'styled-components';
 
 export type AppStackParams = {
     Dashboard: undefined;
@@ -31,6 +32,7 @@ const AppStack = createStackNavigator<AppStackParams>();
 
   
 function AuthRoutes() {
+    const theme = useTheme();
     const { setUser, setIsLogged } = useContext(GlobalContext);
     
     const logout = async () => {
@@ -43,11 +45,11 @@ function AuthRoutes() {
         <AppStack.Navigator
             screenOptions={{
                 headerShown: false,
-                cardStyle: { backgroundColor: '#312e38' },
-                headerStyle: { backgroundColor: '#312e38', elevation: 0 },
+                cardStyle: { backgroundColor: theme.colors.background },
+                headerStyle: { backgroundColor: theme.colors.background, elevation: 0 },
                 headerTitleAlign: 'center',
                 headerTitleStyle: { fontFamily: 'RobotoSlab-Medium' },
-                headerTintColor: '#f4ede8',
+                headerTintColor: theme.colors.text,
             }}>
                 <AppStack.Screen name='Dashboard' component={Dashboard} />
                 <AppStack.Screen name='AppointmentDatePicker' component={AppointmentDatePicker} />

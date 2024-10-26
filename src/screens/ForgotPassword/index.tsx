@@ -5,8 +5,9 @@ import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import { object, string } from 'yup';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useTheme } from 'styled-components';
 
-import logo from '../../assets/LogoLight.png';
+
 import getValidationErrors from '../../utils/getValidationErrors';
 import alert from '../../utils/alert';
 import api from '../../services/api';
@@ -25,6 +26,7 @@ interface ForgotPasswordFormData {
 }
 
 const ForgotPassword: React.FC = () => {
+    const theme = useTheme();
     const route = useRoute<RouteProp<AuthStackParams, 'ForgotPassword'>>();
     const navigation = useNavigation<StackNavigationProp<AuthStackParams, 'ForgotPassword'>>();
 
@@ -70,7 +72,7 @@ const ForgotPassword: React.FC = () => {
     return (
         <Screen safeTop>
             <Scrollable keyboardShouldPersistTaps="handled">
-                <Image source={logo} />
+                <Image source={theme.logo} />
 
                 <Title bold>Recuperar senha</Title>
 

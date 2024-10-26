@@ -5,8 +5,8 @@ export default {
     logo,
 
     colors: {
-        primary: '#000000',
-        secundary: '#FF2525',
+        primary: '#28262e',
+        secundary: '#ff9000',
 
         background: '#312E38',
         li: '#232129',

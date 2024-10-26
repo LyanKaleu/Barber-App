@@ -14,20 +14,20 @@ export const Container = styled(MyScreen)`
 
 export const Header = styled.View`
     padding: 24px;
-    background: #28262e;
+    background: ${props => props.theme.colors.primary};
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
 `;
 
 export const HeaderTitle = styled(MyText)`
-    color: #f4ede8;
+    color: ${props => props.theme.colors.text};
     font-size: 20px;
     line-height: 28px;
 `;
 
 export const UserName = styled(MyText)`
-    color: #ff9000;
+    color: ${props => props.theme.colors.secundary};
 `;
 
 export const ProfileButton = styled.TouchableOpacity``;
@@ -62,7 +62,7 @@ export const ProviderInfo = styled.View`
 
 export const ProviderName = styled(MyText)`
     font-size: 18px;
-    color: #f4ede8;
+    color: ${props => props.theme.colors.text};
 `;
 
 export const ProviderMeta = styled.View`

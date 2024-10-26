@@ -6,7 +6,9 @@ import MyInput from '../../components/Input';
 import MyButton from '../../components/Button';
 import MyTextButton from '../../components/TextButton';
 
-export const Screen = styled(MyScreen)``;
+export const Screen = styled(MyScreen)`
+    background: ${props => props.theme.colors.background};
+`;
 
 export const Scrollable = styled.ScrollView.attrs({
     showsVerticalScrollIndicator: false,
@@ -28,11 +30,16 @@ export const Title = styled(MyText)`
 
 export const Input = styled(MyInput)`
     margin-bottom: 8px;
+    background: ${props => props.theme.colors.li};
+    color: ${props => props.theme.colors.inputColor};
 `;
 
 export const Button = styled(MyButton)`
     margin-top: 8px;
+    margin-bottom: 16px;
     align-self: stretch;
+    background: ${props => props.theme.colors.secundary};
+    color: ${props => props.theme.colors.primary};
 `;
 
 export const BackToLogin = styled(MyTextButton).attrs( props => ({
@@ -48,5 +55,11 @@ export const BackToLogin = styled(MyTextButton).attrs( props => ({
             color: props.theme.colors.text,
         },
     },
-}))``;
-
+    textProps: {
+        style: {
+            color: props.theme.colors.text,
+        },
+    }
+}))`
+    color: ${props => props.theme.colors.secundary};
+`;

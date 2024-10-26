@@ -185,7 +185,7 @@ const SignUp: React.FC = () => {
                     </Button>
                 </Form>
 
-                <BackToLogin icon='arrow-left' onPress={() => handleLogin()}>
+                <BackToLogin icon='arrow-left' iconProps={{color: theme.colors.secundary}} onPress={() => handleLogin()}>
                     Voltar para login
                 </BackToLogin>
             </Scrollable>

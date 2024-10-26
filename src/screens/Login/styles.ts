@@ -28,11 +28,15 @@ export const Title = styled(MyText)`
 
 export const Input = styled(MyInput)`
     margin-bottom: 8px;
+    background: ${props => props.theme.colors.li};
+    color: ${props => props.theme.colors.inputColor};
 `;
 
 export const Button = styled(MyButton)`
     margin-top: 8px;
     align-self: stretch;
+    background: ${props => props.theme.colors.secundary};
+    color: ${props => props.theme.colors.primary};
 `;
 
 export const ForgotPassword = styled(MyTextButton)`
@@ -55,8 +59,8 @@ export const CreateAccount = styled(MyTextButton).attrs(props => ({
         },
     },
     iconProps: {
-        color: '#ff9000',
+        color: props.theme.colors.secundary,
     },
 }))`
-    color: #ff9000;
+    color: ${props => props.theme.colors.secundary};
 `;
