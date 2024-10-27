@@ -127,7 +127,7 @@ const AppointmentDatePicker: React.FC = () => {
             return {
                 ...acc,
                 [weekDay]: {
-                    o: null,
+                    0: null,
                     ...acc[weekDay],
                     [weekOfMonth - 1]: dayOfMonth,
                 },
