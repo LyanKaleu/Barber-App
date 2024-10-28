@@ -95,7 +95,7 @@ const SignUp: React.FC = () => {
                     email: result.email,
                     username: result.username,
                     phone: result.phone,
-                    avatar_url: result.avatar_url
+                    avatar_url: result.avatar
                 };
 
                 setUser(mappedUser);

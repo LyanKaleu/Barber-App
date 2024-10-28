@@ -93,23 +93,22 @@ function Login() {
                     const mappedUser: User = {
                         id: result.$id,
                         email: result.email,
-                        username: result.name,
+                        username: result.username,
                         phone: result.phone,
-                        avatar_url: result.avatar_url
+                        avatar_url: result.avatar
                     };
 
                     setUser(mappedUser);
                 } else {
-                    setUser(null); 
-                  }
-                    setIsLogged(true);
-                    Alert.alert("Success", "Usuario logado");
-                } catch (error: any) {
-                    Alert.alert("Error", error.message);
+                    setUser(null);
                 }
-                setFetching(false);
-            },
-            [signIn],
+                setIsLogged(true);
+            } catch (error: any) {
+                Alert.alert("Error", error.message);
+            }
+            setFetching(false);
+        },
+        [signIn],
     );
 
     return (
