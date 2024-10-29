@@ -10,11 +10,11 @@ declare interface CreateUserParams {
 }
 
 declare interface User {
-    id: string;
+  accountId: string;
     email: string;
-    username: string;
+    username?: string;
     phone: string;
-    avatar_url: string;
+    avatar_url?: string;
   }
   
 declare interface GlobalContextType{
@@ -50,3 +50,10 @@ export interface CreateAppointmentParams {
   service: string;
   note: string;
 }
+
+export type UpdateProfileParams = {
+  username?: string;
+  password: string;
+  email?: string;
+  phone?: string;
+};

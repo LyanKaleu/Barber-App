@@ -1,6 +1,6 @@
-import { ID, Query } from "react-native-appwrite";
+import { ID, Models, Query } from "react-native-appwrite";
 import { account, appwriteConfig, avatars, databases } from "../appwrite.config";
-import { CreateUserParams } from "../../@types";
+import { CreateUserParams, UpdateProfileParams } from "../../@types";
 
 export async function createUser(user: CreateUserParams) {
   try {
@@ -33,7 +33,7 @@ export async function createUser(user: CreateUserParams) {
 
     return newUser;
   } catch (error: any) {
-    let mensagemErro = "Ocorreu um erro ao tentar criar a conta."; 
+    let mensagemErro = "Ocorreu um erro ao tentar criar a conta.";
 
     if (error.code) {
       switch (error.code) {
@@ -118,16 +118,76 @@ export async function signOut() {
   }
 }
 
-// Sign Out
-export async function passwordRecovery(email: string) {
-    const promise = account.createRecovery(email, 'https://example.com');
+export async function updateUserProfile(user: UpdateProfileParams) {
+  try {
+    let perfilAtualizado: Models.User<Models.Preferences> | undefined;
 
-    promise.then(function (response) {
-      console.log(response); // Success
-  }, function (error) {
-      console.log(error); // Failure
-  });
+    // Atualizar somente os dados que estão presentes em user
+    if (user.username) {
+      perfilAtualizado = await account.updateName(user.username);
+    }
+    if (user.email && user.password) {
+      perfilAtualizado = await account.updateEmail(user.email, user.password);
+    }
+    if (user.phone && user.password) {
+      perfilAtualizado = await account.updatePhone(user.phone, user.password);
+    }
+
+    if (!perfilAtualizado) {
+      throw new Error("Nenhuma atualização foi realizada.");
+    }
+
+    const result = await getCurrentUser();
+    if (!result || !result.$id) {
+      throw new Error("ID do usuário atual não encontrado.");
+    }
+    const currentUserId = result.$id; // ID da conta do usuário
+    
+    const updates: Record<string, any> = {}; // Objeto para armazenar os atributos a serem atualizados
+
+    // Adicionar propriedades ao objeto de atualizações apenas se elas forem diferentes
+    if (user.username && user.username !== result.name) {
+      updates.username = user.username; // Adiciona username ao objeto se for diferente
+    }
+    if (user.email && user.email !== result.email) {
+      updates.email = user.email; // Adiciona email ao objeto se for diferente
+    }
+    if (user.phone && user.phone !== result.phone) {
+      updates.phone = user.phone; // Adiciona phone ao objeto se for diferente
+    }
+
+    // Se não houver atualizações a serem feitas, não chamar updateDocument
+    if (Object.keys(updates).length === 0) {
+      console.log("Nenhuma atualização necessária.");
+      return;
+    }
+
+    // Atualizar dados na tabela 'users' apenas com os atributos alterados
+    await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      currentUserId,
+      updates // Passar apenas as atualizações
+    );
+
+    // Retornar os dados atualizados do usuário após update
+    return await getCurrentUser();
+
+  } catch (error: any) {
+    console.error("Erro na atualização:", error.message);
+
+    // Tratamento de mensagens de erro específicas
+    let mensagemErro = "Ocorreu um erro.";
+    if (error.message.includes("Invalid credentials. Please check the email and password.")) {
+      mensagemErro = "A senha está incorreta.";
+    } else if (error.message.includes("A target with the same ID already exists.")) {
+      mensagemErro = "Essas credenciais já existem.";
+    }
+
+    throw new Error(mensagemErro);
+  }
 }
+
 
 export async function getBarbers() {
   try {

@@ -1,19 +1,11 @@
 import React, { useContext } from 'react';
-import { View, TextInput, ActivityIndicator } from 'react-native';
+import { View, TextInput, ActivityIndicator, Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import * as Yup from 'yup';
 import { useActionSheet } from '@expo/react-native-action-sheet';
-
-import {
-    requestCameraPermission,
-    requestGaleriaPermission,
-} from '../../utils/permissions';
-import { useAuth } from '../../hooks/auth';
-import api from '../../services/api';
-import { UpdateProfileParams } from '../../services/api.types';
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import alert from '../../utils/alert';
@@ -26,13 +18,16 @@ import {
     AvatarContainer,
     AvatarIconContainer,
 } from './styles';
-import { ImageDTO, ProfileFormData } from './types';
+import { ImageDTO } from './types';
 import { GlobalContext } from '../../context/GlobalProvider';
+import { UpdateProfileParams, User } from '../../@types';
+import { updateUserProfile } from '../../lib/actions/user.actions';
 
 const Profile: React.FC = () => {
-    const { loading, user } = useContext(GlobalContext);
+    const { user } = useContext(GlobalContext);
     const { showActionSheetWithOptions } = useActionSheet();
-
+    
+    const { setIsLogged, setUser } = React.useContext(GlobalContext);
     const [updatingAvatar, setUpdatingAvatar] = React.useState(false);
     const [updatingProfile, setUpdatingProfile] = React.useState(false);
 
@@ -40,68 +35,71 @@ const Profile: React.FC = () => {
     const emailInputRef = React.useRef<TextInput>(null);
     const passwordInputRef = React.useRef<TextInput>(null);
     const newPasswordInputRef = React.useRef<TextInput>(null);
-    const confirmPasswordInputRef = React.useRef<TextInput>(null);
 
-    const handleSaveProfile = React.useCallback(async (data: ProfileFormData) => {
+    const handleSaveProfile = React.useCallback(async (data: UpdateProfileParams) => {
         try {
             setUpdatingProfile(true);
             formRef.current?.setErrors({});
-
+    
+            // Definir o esquema de validação
             const schema = Yup.object().shape({
-                name: Yup.string().required('Nome obrigatório'),
-                email: Yup.string()
-                    .required('E-mail obrigatório')
-                    .email('Digite um e-mail válido'),
-                old_password: Yup.string(),
-                password: Yup.string().when('old_password', {
-                    is: (val: string) => !!val?.length,
-                    then: _schema => _schema.required('Campo obrigatório'),
-                }),
-                password_confirmation: Yup.string()
-                    .when('old_password', {
-                        is: (val: string) => !!val?.length,
-                        then: _schema => _schema.required('Campo obrigatório'),
-                    })
-                    .oneOf([Yup.ref('password'), ''], 'Confirmação incorreta'),
+                username: Yup.string().optional(),
+                email: Yup.string().email("Email inválido").optional(),
+                phone: Yup.string().optional(),
+                password: Yup.string().required("A senha é obrigatória"),
             });
-
+    
+            // Validar os dados com o Yup
             await schema.validate(data, {
                 abortEarly: false,
             });
-
-            let updateData = {
-                name: data.name,
-                email: data.email,
-            } as UpdateProfileParams;
-            if (data.password) {
-                updateData = {
-                    ...updateData,
-                    password: data.password,
-                    old_password: data.old_password,
-                    password_confirmation: data.password_confirmation,
-                };
+    
+            // Inicializar apenas com a senha, que é obrigatória
+            const updateData: UpdateProfileParams = { password: data.password };
+    
+            // Adicionar propriedades a updateData somente se elas existirem e forem diferentes
+            if (data.username && data.username !== user?.username) {
+                updateData.username = data.username;
             }
+            if (data.email && data.email !== user?.email) {
+                updateData.email = data.email;
+            }
+            if (data.phone && data.phone !== user?.phone) {
+                updateData.phone = data.phone;
+            }
+    
+            // Chamar função de atualização do perfil
+            const result = await updateUserProfile(updateData);
+            
+            if (result) {
+                const mappedUser: User = {
+                    accountId: result.$id,
+                    email: result.email,
+                    username: result.username,
+                    phone: result.phone,
+                    avatar_url: user?.avatar_url
+                };
 
-            await api.updateProfile(updateData);
-
-            alert({ title: 'Perfil atualizado com sucesso!' });
-        } catch (error) {
+                setUser(mappedUser);
+                
+            } else {
+                setUser(null);
+            }
+            setIsLogged(true);
+    
+            Alert.alert("Perfil atualizado com sucesso!");
+        } catch (error: any) {
             if (error instanceof Yup.ValidationError) {
                 const errors = getValidationErrors(error);
-
                 formRef.current?.setErrors(errors);
-
                 return;
             }
-
-            alert({
-                title: 'Erro no cadastro',
-                message: 'Ocorreu um erro ao fazer cadastro, tente novamente.'
-            });
+            
+            Alert.alert(error.message || "Erro ao atualizar perfil.");
         } finally {
             setUpdatingProfile(false);
         }
-    }, []);
+    }, [user]); 
 
     const uploadAvatar = React.useCallback(
         async (image: ImageDTO) => {
@@ -158,7 +156,6 @@ const Profile: React.FC = () => {
     const handleRemoveAvatar = React.useCallback(async () => {
         try {
             setUpdatingAvatar(true);
-            await api.removerAvatar();
 
         } catch (error) {
             alert({
@@ -168,7 +165,7 @@ const Profile: React.FC = () => {
         } finally {
             setUpdatingAvatar(false);
         }
-    }, [ user]);
+    }, [user]);
 
     function handleShowActionSheet() {
         const options = [
@@ -218,7 +215,7 @@ const Profile: React.FC = () => {
                 <Form initialData={user} ref={formRef} onSubmit={handleSaveProfile}>
                     <Input
                         autoCapitalize="words"
-                        name="name"
+                        name="username"
                         icon="user"
                         placeholder="Nome"
                         returnKeyType="next"
@@ -244,10 +241,24 @@ const Profile: React.FC = () => {
                     />
 
                     <Input
+                        name="phone"
+                        icon="phone"
+                        keyboardType="phone-pad"
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        placeholder="Telefone (ex: 86994516203)"
+                        blurOnSubmit={false}
+                        returnKeyType="next"
+                        onSubmitEditing={() => {
+                            passwordInputRef.current?.focus();
+                        }}
+                    />
+
+                    <Input
                         style={{ marginTop: 16 }}
                         ref={passwordInputRef}
                         secureTextEntry
-                        name="old_password"
+                        name="password"
                         icon="lock"
                         placeholder="Senha atual"
                         textContentType="newPassword"
@@ -255,33 +266,6 @@ const Profile: React.FC = () => {
                         blurOnSubmit={false}
                         onSubmitEditing={() => {
                             newPasswordInputRef.current?.focus();
-                        }}
-                    />
-
-                    <Input
-                        ref={newPasswordInputRef}
-                        secureTextEntry
-                        name="password"
-                        icon="lock"
-                        placeholder="Nova senha"
-                        textContentType="newPassword"
-                        returnKeyType="next"
-                        blurOnSubmit={false}
-                        onSubmitEditing={() => {
-                            confirmPasswordInputRef.current?.focus();
-                        }}
-                    />
-
-                    <Input
-                        ref={confirmPasswordInputRef}
-                        secureTextEntry
-                        name="password_confirmation"
-                        icon="lock"
-                        placeholder="Confirmar senha"
-                        textContentType="newPassword"
-                        returnKeyType="send"
-                        onSubmitEditing={() => {
-                            formRef.current?.submitForm();
                         }}
                     />
                 </Form>
@@ -293,7 +277,7 @@ const Profile: React.FC = () => {
                 onPress={() => {
                     formRef.current?.submitForm();
                 }}>
-                    Confirmar mudanças
+                Confirmar mudanças
             </Button>
         </Container>
     );
