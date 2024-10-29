@@ -33,6 +33,11 @@ export default function App() {
     loadResources();
   }, []);
 
+  React.useEffect(() => {
+    StatusBar.setBarStyle(theme.title === "dark" ? "light-content" : "dark-content", true);
+    StatusBar.setBackgroundColor(theme.colors.background);
+  }, [theme]);
+
   const toggleTheme = (): void => {
     setTheme(theme.title === "dark" ? light : dark);
   };
@@ -46,11 +51,6 @@ export default function App() {
       <ActionSheetProvider>
         <NavigationContainer>
           <ThemeProvider theme={theme}>
-            <StatusBar
-              barStyle={theme.title === "dark" ? "light-content" : "dark-content"}
-              backgroundColor={theme.colors.background}
-              translucent
-            />
               <Routes />
             <ThemeSwitcher toggleTheme={toggleTheme} />
           </ThemeProvider>
