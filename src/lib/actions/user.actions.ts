@@ -136,7 +136,7 @@ export async function updateUserProfile(user: UpdateProfileParams) {
     if (!perfilAtualizado) {
       throw new Error("Nenhuma atualização foi realizada.");
     }
-
+    
     const result = await getCurrentUser();
     if (!result || !result.$id) {
       throw new Error("ID do usuário atual não encontrado.");
@@ -144,10 +144,12 @@ export async function updateUserProfile(user: UpdateProfileParams) {
     const currentUserId = result.$id; // ID da conta do usuário
     
     const updates: Record<string, any> = {}; // Objeto para armazenar os atributos a serem atualizados
+    const avatarUrl = avatars.getInitials(user.username);
 
     // Adicionar propriedades ao objeto de atualizações apenas se elas forem diferentes
     if (user.username && user.username !== result.name) {
       updates.username = user.username; // Adiciona username ao objeto se for diferente
+      updates.avatar = avatarUrl; 
     }
     if (user.email && user.email !== result.email) {
       updates.email = user.email; // Adiciona email ao objeto se for diferente
@@ -155,7 +157,7 @@ export async function updateUserProfile(user: UpdateProfileParams) {
     if (user.phone && user.phone !== result.phone) {
       updates.phone = user.phone; // Adiciona phone ao objeto se for diferente
     }
-
+    
     // Se não houver atualizações a serem feitas, não chamar updateDocument
     if (Object.keys(updates).length === 0) {
       console.log("Nenhuma atualização necessária.");
