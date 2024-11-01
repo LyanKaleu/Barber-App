@@ -20,7 +20,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RefreshControl, ListRenderItemInfo, Alert } from 'react-native';
+import { RefreshControl, ListRenderItemInfo, Alert, TextInput, TouchableOpacity, Text } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 
 import { upperCaseFirstLetter } from '../../utils/upperCaseFirstLetter';
@@ -260,8 +260,11 @@ const AppointmentDatePicker: React.FC = () => {
         selectedProviderId,
         navigation,
         selectedProvider,
-        user
+        user,
+        selectedService,
     ]);
+
+    const [selectedService, setSelectedService] = React.useState<Services | null>(null);
 
     const morningAvailability = React.useMemo(() => {
         return dayAvailability
@@ -307,6 +310,8 @@ const AppointmentDatePicker: React.FC = () => {
         [handleSelectProvider, selectedProviderId],
     );
 
+    const [description, setDescription] = React.useState<string>('');
+
     return (
         <Container
             safeTop
@@ -343,6 +348,52 @@ const AppointmentDatePicker: React.FC = () => {
                     renderItem={renderProvider}
                 />
             </ProvidersListContainer>
+
+            <Schedule>
+                    <Title bold>Escolha o serviço</Title>
+                    <Section>
+    <SectionContent style={{ flexDirection: 'row' }}>
+        <TouchableOpacity
+            activeOpacity={1} 
+            onPress={() => setSelectedService("Corte de cabelo")}
+            style={{
+                flex: 1,
+                marginRight: 5,
+                padding: 14,
+                borderRadius: 10,
+                backgroundColor: selectedService === "Corte de cabelo" ? '#FF9000' : '#3E3B47', 
+            }}
+        >
+            <Text
+             style={{ color: selectedService === "Corte de cabelo" ? 'black' : 'white', 
+             fontSize: 16 }}>
+                Corte de cabelo
+            </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+            activeOpacity={1} // Define a opacidade ativa para 1
+            onPress={() => setSelectedService("Corte da barba")}
+            style={{
+                flex: 1,
+                marginLeft: 5,
+                padding: 14,
+                borderRadius: 10,
+                backgroundColor: selectedService === "Corte da barba" ? '#FF9000' : '#3E3B47', 
+            }}
+        >
+            <Text
+             style={{ color: selectedService === "Corte da barba" ? 'black' : 'white',
+                fontSize: 16,
+              }}>
+                Corte da barba
+            </Text>
+        </TouchableOpacity>
+    </SectionContent>
+</Section>
+
+
+
+            </Schedule>
 
             <Calendar>
                 <Title bold>Escolha a data</Title>
@@ -452,6 +503,27 @@ const AppointmentDatePicker: React.FC = () => {
                     </SectionContent>
                 </Section>
             </Schedule>
+
+            <Title gold>Descrição</Title>
+                    
+                    <TextInput
+                       style={{
+                       borderWidth: 1,
+                       borderColor: '#FFFFFF',
+                       borderRadius: 10,
+                       paddingVertical: 70, // Use paddingVertical para controle vertical
+                       paddingHorizontal: 20, // Ajuste o preenchimento horizontal
+                       paddingTop: 10,
+                       padding: 20,
+                       margin: 23,
+                       color: '#FFFFFF',
+                       textAlign: 'lefth',
+                                           }}
+                       placeholder="Mais algum detalhe?"
+                       placeholderTextColor="#FFFFFF"
+                       value={description}
+                       onChangeText={setDescription}
+                   />
 
             <CreateAppointmentButton
                 onPress={handleCreateAppointment}
