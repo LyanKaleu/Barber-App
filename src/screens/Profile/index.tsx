@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { View, TextInput, ActivityIndicator, Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import FeatherIcon from 'react-native-vector-icons/Feather';
@@ -21,7 +22,8 @@ import {
 import { ImageDTO } from './types';
 import { GlobalContext } from '../../context/GlobalProvider';
 import { UpdateProfileParams, User } from '../../@types';
-import { updateUserProfile } from '../../lib/actions/user.actions';
+import { updateUserProfile, updateUserProfileAvatar } from '../../lib/actions/user.actions';
+import { appwriteConfig, databases } from '../../lib/appwrite.config';
 
 const Profile: React.FC = () => {
     const { user } = useContext(GlobalContext);
@@ -77,7 +79,7 @@ const Profile: React.FC = () => {
                     email: result.email,
                     username: result.username,
                     phone: result.phone,
-                    avatar_url: result?.avatar
+                    avatar_url: user?.avatar_url
                 };
 
                 setUser(mappedUser);
@@ -106,17 +108,41 @@ const Profile: React.FC = () => {
             try {
                 setUpdatingAvatar(true);
 
-                const formData = new FormData();
+                setUser((prevUser: User | null) =>
+                    prevUser
+                        ? {
+                            ...prevUser,
+                            avatar_url: image.uri,
+                        }
+                        : null,
+                );
 
+                // Fazer o fetch da imagem para obter um blob
                 const imageResponse = await fetch(image.uri);
                 const blob = await imageResponse.blob();
 
-                const filePaths = image.uri.split('/');
-                const filename = filePaths[filePaths.length - 1];
+                // Se a função não consegue converter o blob diretamente em File
+                const file = new File([blob], image.name, { type: image.type || 'image/jpeg' });
 
-                formData.append('avatar', blob, filename);
+                if (!user) {
+                    throw new Error("Você precisa estar logado para atualizar o avatar.");
+                }
 
-
+                const updatedUserAvatarUrl = await updateUserProfileAvatar(file);
+                
+                if (updatedUserAvatarUrl) {
+                    setUser((prevUser: User | null) => 
+                        prevUser
+                            ? {
+                                ...prevUser,
+                                avatar_url: updatedUserAvatarUrl,
+                            }
+                            : null,
+                    );
+                    Alert.alert("Avatar atualizado com sucesso!");
+                } else {
+                    throw new Error("Falha ao atualizar o avatar.")
+                }
             } catch (error: any) {
                 alert({
                     title: 'Erro',
@@ -126,23 +152,30 @@ const Profile: React.FC = () => {
                 setUpdatingAvatar(false);
             }
         },
-        [],
+        [setUser, user],
     );
 
     const handleOpenPicker = async (selectType: 'image' | 'video') => {
         try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: selectType === 'image'
-                    ? ['image/png', 'image/jpg', 'image/jpeg']
-                    : ['video/mp4', 'video/gif']
-            });
+            setUpdatingAvatar(true);
 
-            if (result.type !== 'cancel') {
-                const { uri, mimeType, name } = result;
+            const mediaType = selectType === 'image'
+                ? ImagePicker.MediaTypeOptions.Images
+                : ImagePicker.MediaTypeOptions.Videos;
+    
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: mediaType,
+                quality: 1,
+                allowsEditing: true,
+            });
+    
+            if (!result.canceled) {
+                const { uri } = result.assets[0];
+    
                 await uploadAvatar({
                     uri,
-                    type: mimeType || 'image/jpeg',
-                    name: name || uri.split('/').pop() || 'image.jpg',
+                    type: result.assets[0].type || 'image/jpeg', 
+                    name: result.assets[0].fileName || uri.split('/').pop() || 'image.jpg',
                 });
             }
         } catch (error) {
@@ -150,12 +183,52 @@ const Profile: React.FC = () => {
                 title: 'Erro',
                 message: 'Houve um erro ao selecionar a imagem, tente novamente',
             });
+        } finally {
+            setUpdatingAvatar(false);
+        }
+    };
+
+    const handleOpenCamera = async () => {
+        try {
+            setUpdatingAvatar(true);
+
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 1,
+                allowsEditing: true,
+            });
+    
+            if (!result.canceled) {
+                const { uri } = result.assets[0]; 
+    
+                await uploadAvatar({
+                    uri,
+                    type: result.assets[0].type || 'image/jpeg', 
+                    name: result.assets[0].fileName || uri.split('/').pop() || 'image.jpg', 
+                });
+            }
+        } catch (error) {
+            alert({
+                title: 'Erro',
+                message: 'Houve um erro ao abrir a câmera, tente novamente',
+            });
+        } finally {
+            setUpdatingAvatar(false);
         }
     };
 
     const handleRemoveAvatar = React.useCallback(async () => {
         try {
             setUpdatingAvatar(true);
+
+            setUser((prevUser: User | null) =>
+                prevUser
+                    ? {
+                        ...prevUser,
+                        avatar_url: undefined,
+                    }
+                    : null,
+            );
 
         } catch (error) {
             alert({
@@ -169,6 +242,7 @@ const Profile: React.FC = () => {
 
     function handleShowActionSheet() {
         const options = [
+            { label: 'Tirar foto', action: handleOpenCamera },
             { label: 'Abrir galeria', action: () => handleOpenPicker('image') },
             { label: 'Cancelar', action: () => undefined },
         ];
@@ -199,7 +273,7 @@ const Profile: React.FC = () => {
             <AvatarContainer onPress={handleShowActionSheet}>
                 <Avatar
                     size={186}
-                    nome={user?.username}
+                    nome={user?.username ?? ''}
                     source={{ uri: user?.avatar_url || undefined }}
                 />
                 <AvatarIconContainer>
@@ -212,7 +286,7 @@ const Profile: React.FC = () => {
             </AvatarContainer>
 
             <View>
-                <Form initialData={user} ref={formRef} onSubmit={handleSaveProfile}>
+                <Form initialData={user || undefined} ref={formRef} onSubmit={handleSaveProfile}>
                     <Input
                         autoCapitalize="words"
                         name="username"

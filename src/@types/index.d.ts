@@ -1,3 +1,5 @@
+import React from "react";
+
 declare module '*.png';
 
 declare type Status = "Agendado" | "Cancelado" | "Concluido";
@@ -21,7 +23,7 @@ declare interface GlobalContextType{
     isLogged: boolean;
     setIsLogged: (isLogged: boolean) => void;
     user: User | null;
-    setUser: (user: User | null) => void;
+    setUser: React.Dispatch<React.SetStateAction<User | null>>;
     loading: boolean;
   }
 
