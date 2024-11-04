@@ -23,7 +23,7 @@ export const GlobalProvider: FC<PropsWithChildren> = ({ children }) => {
       .then((res) => {
         if (res) {
           const mappedUser: User = {
-            accountId: res.$id,         
+            accountId: res.accountId,         
             email: res.email,     
             username: res.username,   
             phone: res.phone, 

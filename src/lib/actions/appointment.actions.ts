@@ -1,10 +1,19 @@
-import { Query } from "react-native-appwrite";
+import { ExecutionMethod, Query } from "react-native-appwrite";
 import { CreateAppointmentParams } from "../../@types";
-import { appwriteConfig, databases } from "../appwrite.config";
+import { appwriteConfig, databases, functions } from "../appwrite.config";
+import { upperCaseFirstLetter } from "../../utils/upperCaseFirstLetter";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
 
 //  CREATE APPOINTMENT
-export const createAppointment = async (appointment: CreateAppointmentParams) => {
+export const createAppointment = async (appointment: CreateAppointmentParams, username: string, nameBarber: string, date: number) => {
     try {
+        const formattedDate = upperCaseFirstLetter(
+            format(date, "EEEE', dia' dd 'de' MMMM 'de' yyyy 'às' HH:mm'h'", {
+                locale: ptBR,
+            })
+        );
+        
         const newAppointment = await databases.createDocument(
             appwriteConfig.databaseId,
             appwriteConfig.schedulingCollectionId,
@@ -12,7 +21,21 @@ export const createAppointment = async (appointment: CreateAppointmentParams) =>
             appointment
         );
 
-        return newAppointment; // Retorna o novo agendamento criado
+        const content = `Olá, ${username}! Seu agendamento na Barber Shop com o barbeiro ${nameBarber} foi realizado com sucesso para ${formattedDate} `;
+        const userId = appointment.clientId;
+
+        const body = JSON.stringify({ content, userId });
+        
+         functions.createExecution(
+            '6723e996000ee55c16cb',  // functionId
+            body,  // body (optional)
+            false,  // async (optional)
+            '<PATH>',  // path (optional)
+            ExecutionMethod.GET,  // method (optional)
+            {} // headers (optional)
+        );
+
+        // return newAppointment; // Retorna o novo agendamento criado
     } catch (error) {
         console.error("An error occurred while creating a new appointment:", error);
         throw new Error("Falha ao criar agendamento"); // Lança um erro para que possa ser tratado onde a função é chamada
@@ -49,7 +72,7 @@ export async function getBarberMonthAvailability(
             const appointmentDate = new Date(appointment.schedule);
             const hour = appointmentDate.getUTCHours(); 
             const day = appointmentDate.getDate();
-            
+
             if (!occupiedHoursByDay[day]) {
                 occupiedHoursByDay[day] = new Set<number>();
             }

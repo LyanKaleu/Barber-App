@@ -86,6 +86,8 @@ const AppointmentDatePicker: React.FC = () => {
     const { providerId } = route.params;
 
     const [selectedProviderId, setSelectedProviderId] = React.useState<string>(providerId || '');
+    const [selectedService, setSelectedService] = React.useState<string>('');
+    const [description, setDescription] = React.useState<string>('');
 
     const [calendarDate, setCalendarDate] = React.useState(new Date());
 
@@ -236,14 +238,14 @@ const AppointmentDatePicker: React.FC = () => {
             const appointmentData = {
                 barberId: selectedProviderId,
                 schedule: localTime.toISOString(), // Converte para string ISO
-                clientId: user?.id,
+                clientId: user?.accountId,
                 status: "Agendado",
-                service: "Corte de cabelo",
-                note: "Quero um corte degrader"
+                service: selectedService,
+                note: description
             };
-
+            
             // Chama a função para criar o agendamento
-            const newAppointment = await createAppointment(appointmentData);
+            const newAppointment = await createAppointment(appointmentData, user?.username || "", selectedProvider?.username || "username", appointmentDate.getTime());
 
             // Navega para a tela de agendamento criado
             navigation.navigate('AppointmentCreated', {
@@ -262,9 +264,8 @@ const AppointmentDatePicker: React.FC = () => {
         selectedProvider,
         user,
         selectedService,
+        description
     ]);
-
-    const [selectedService, setSelectedService] = React.useState<Services | null>(null);
 
     const morningAvailability = React.useMemo(() => {
         return dayAvailability
@@ -309,8 +310,6 @@ const AppointmentDatePicker: React.FC = () => {
         },
         [handleSelectProvider, selectedProviderId],
     );
-
-    const [description, setDescription] = React.useState<string>('');
 
     return (
         <Container
