@@ -91,7 +91,7 @@ function Login() {
 
                 if (result) {
                     const mappedUser: User = {
-                        accountId: result.$id,
+                        accountId: result.accountId,
                         email: result.email,
                         username: result.username,
                         phone: result.phone,

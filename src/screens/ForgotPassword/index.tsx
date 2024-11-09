@@ -10,7 +10,6 @@ import { useTheme } from 'styled-components';
 
 import getValidationErrors from '../../utils/getValidationErrors';
 import alert from '../../utils/alert';
-import api from '../../services/api';
 import { AuthStackParams } from '../../routes/auth.routes';
 
 import { Screen, Scrollable, Title, Input, Button, Login } from './styles';
@@ -52,7 +51,6 @@ const ForgotPassword: React.FC = () => {
             }
 
             try {
-                await api.forgotPassword(data.email);
                 alert({
                     title: 'E-mail de recuperação enviado',
                     message: 'Confira a sua caixa de mensagem e siga as instruções para resetar a sua senha.\n\nCaso não encontre o e-mail, verifique a caixa de spam.',

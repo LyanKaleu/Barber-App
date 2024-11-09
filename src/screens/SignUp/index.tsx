@@ -91,7 +91,7 @@ const SignUp: React.FC = () => {
                 const result = await createUser(user);
 
                 const mappedUser: User = {
-                    id: result.$id,
+                    accountId: result.accountId,
                     email: result.email,
                     username: result.username,
                     phone: result.phone,

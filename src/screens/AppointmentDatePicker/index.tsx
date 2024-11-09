@@ -24,7 +24,6 @@ import { RefreshControl, ListRenderItemInfo, Alert, TextInput, TouchableOpacity,
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 
 import { upperCaseFirstLetter } from '../../utils/upperCaseFirstLetter';
-import api from '../../services/api';
 import { getBarbers } from '../../lib/actions/user.actions';
 import { AppStackParams } from '../../routes/app.routes';
 
