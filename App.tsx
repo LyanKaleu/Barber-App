@@ -2,9 +2,11 @@ import "react-native-gesture-handler";
 import * as React from "react";
 import { ThemeProvider } from "styled-components";
 import { StatusBar } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { Link, NavigationContainer } from "@react-navigation/native";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import * as Font from "expo-font";
+import * as Linking from "expo-linking";
+import ResetPassword from "./src/screens/ResetPassword";
 
 import ThemeSwitcher from "./src/components/ThemeSwitcher";
 import light from "./src/styles/themes/light";
@@ -12,6 +14,7 @@ import dark from "./src/styles/themes/dark";
 
 import Routes from "./src/routes";
 import GlobalProvider from "./src/context/GlobalProvider";
+import Login from "./src/screens/Login";
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -49,7 +52,22 @@ export default function App() {
   return (
     <GlobalProvider>
       <ActionSheetProvider>
-        <NavigationContainer>
+        <NavigationContainer linking={{
+          prefixes: [Linking.createURL('/')],
+          config: {
+            screens: {
+              ResetPassword: {
+                path: 'resetPassword',
+              },
+              Login: {
+                path: 'login'
+              },
+              ForgotPassword: {
+                path: 'forgotPassword',
+              }
+            }
+          }
+        }}>
           <ThemeProvider theme={theme}>
               <Routes />
             <ThemeSwitcher toggleTheme={toggleTheme} />

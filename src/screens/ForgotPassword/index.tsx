@@ -13,6 +13,8 @@ import alert from '../../utils/alert';
 import { AuthStackParams } from '../../routes/auth.routes';
 
 import { Screen, Scrollable, Title, Input, Button, Login } from './styles';
+import { Account, Client } from 'react-native-appwrite';
+import { appwriteConfig } from '../../lib/appwrite.config';
 
 const forgotPasswordSchema = object().shape({
     email: string()
@@ -38,6 +40,13 @@ const ForgotPassword: React.FC = () => {
         navigation.navigate('Login', { email: undefined });
     }, [navigation]);
 
+    const client = new Client(); 
+    client 
+        .setEndpoint(appwriteConfig.endpoint) 
+        .setProject(appwriteConfig.projectId);
+
+    const account = new Account(client);
+
     const handleForgotPasswordSubmit = React.useCallback(
         async (data: ForgotPasswordFormData) => {
             setFetching(true);
@@ -51,6 +60,8 @@ const ForgotPassword: React.FC = () => {
             }
 
             try {
+                await account.createRecovery(data.email, "http://localhost:8081/reset-password");
+
                 alert({
                     title: 'E-mail de recuperação enviado',
                     message: 'Confira a sua caixa de mensagem e siga as instruções para resetar a sua senha.\n\nCaso não encontre o e-mail, verifique a caixa de spam.',
