@@ -18,13 +18,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.barberapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "scheme": "barberApp",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "deepLinking": true
   }
 }

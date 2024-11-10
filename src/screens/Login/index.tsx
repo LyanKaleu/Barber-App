@@ -104,11 +104,14 @@ function Login() {
                 }
                 setIsLogged(true);
             } catch (error: any) {
-                Alert.alert("Error", error.message);
+                Alert.alert(
+                    'Erro ao fazer login',
+                    'Verifique as credenciais informadas'
+                );
             }
             setFetching(false);
         },
-        [signIn],
+        [signIn, getCurrentUser, setUser, setIsLogged],
     );
 
     return (

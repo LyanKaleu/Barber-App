@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import ForgotPassword from '../screens/ForgotPassword';
+import ResetPassword from '../screens/ResetPassword';
 
 export type AuthStackParams = {
   Login: {
@@ -12,6 +13,10 @@ export type AuthStackParams = {
   SignUp: undefined;
   ForgotPassword: {
     email?: string;
+  };
+  ResetPassword: {
+    userId: string;
+    secret: string;
   };
 };
 
@@ -27,6 +32,7 @@ function AuthRoutes() {
         <AuthStack.Screen name='Login' component={Login} />
         <AuthStack.Screen name='SignUp' component={SignUp} />
         <AuthStack.Screen name='ForgotPassword' component={ForgotPassword} />
+        <AuthStack.Screen name='ResetPassword' component={ResetPassword} />
       </AuthStack.Navigator>
   );
 }
