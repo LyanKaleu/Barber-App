@@ -1,4 +1,4 @@
-import { ID, Models, Query } from "react-native-appwrite";
+import { ID, ImageGravity, Models, Query } from "react-native-appwrite";
 import { account, appwriteConfig, avatars, databases, storage } from "../appwrite.config";
 import { CreateUserParams, UpdateProfileParams, User } from "../../@types";
 
@@ -118,7 +118,7 @@ export async function signOut() {
   }
 }
 
-export async function updateUserProfile(user: UpdateProfileParams): Promise<User | null> {
+export async function updateUserProfile(user: UpdateProfileParams) {
   try {
     let perfilAtualizado: Models.User<Models.Preferences> | undefined;
 
@@ -133,17 +133,12 @@ export async function updateUserProfile(user: UpdateProfileParams): Promise<User
       perfilAtualizado = await account.updatePhone(user.phone, user.password);
     }
 
-    if (!perfilAtualizado) {
-      throw new Error("Nenhuma atualização foi realizada.");
-      return null;
-    }
-
     const result = await getCurrentUser();
     if (!result || !result.$id) {
       throw new Error("ID do usuário atual não encontrado.");
     }
     const currentUserId = result.$id; // ID da conta do usuário
-    
+
     const updates: Record<string, any> = {}; // Objeto para armazenar os atributos a serem atualizados
 
     // Adicionar propriedades ao objeto de atualizações apenas se elas forem diferentes
@@ -158,21 +153,18 @@ export async function updateUserProfile(user: UpdateProfileParams): Promise<User
     }
 
     // Se não houver atualizações a serem feitas, não chamar updateDocument
-    if (Object.keys(updates).length === 0) {
-      console.log("Nenhuma atualização necessária.");
-      return result;
+    if (Object.keys(updates).length !== 0) {
+      // Atualizar dados na tabela 'users' apenas com os atributos alterados
+      await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.userCollectionId,
+        currentUserId,
+        updates // Passar apenas as atualizações
+      );
+
+      // Retornar os dados atualizados do usuário após update
+      return await getCurrentUser();
     }
-
-    // Atualizar dados na tabela 'users' apenas com os atributos alterados
-    await databases.updateDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.userCollectionId,
-      currentUserId,
-      updates // Passar apenas as atualizações
-    );
-
-    // Retornar os dados atualizados do usuário após update
-    return await getCurrentUser();
 
   } catch (error: any) {
     console.error("Erro na atualização:", error.message);
@@ -209,23 +201,81 @@ export async function getBarbers() {
   }
 }
 
-export async function updateUserProfileAvatar(file: File): Promise<string | null> {
+export async function uploadFile(file: any, type: any) {
+  if (!file) return;
+
+  const { mimeType, ...rest } = file;
+  const asset = { type: mimeType, ...rest };
+
   try {
     // Upload do arquivo para o Appwrite Storage
-      const uploadedFile = await storage.createFile(
+    const uploadedFile = await storage.createFile(
       appwriteConfig.storageId,
       ID.unique(),
-      file // Passando o blob ou o objeto File diretamente
+      asset
     );
 
-    // Obter a URL do arquivo para visualização
-    const fileUrl = storage.getFileView(appwriteConfig.storageId, uploadedFile.$id);
+    // Obter a URL de visualização do arquivo enviado
+    const fileUrl = await getFilePreview(uploadedFile.$id, type);
 
-    console.log(file);
+    const result = await getCurrentUser();
+    if (!result || !result.$id) {
+      throw new Error("ID do usuário atual não encontrado.");
+    }
+    const currentUserId = result.$id;
 
-    return fileUrl.href;
-  } catch (error) {
-    console.error("Erro ao atualizar avatar:", error);
-    return null; // Retornar null em caso de erro
+    await databases.updateDocument(
+      appwriteConfig.databaseId,  // ID do banco de dados
+      appwriteConfig.userCollectionId,  // ID da coleção de usuários
+      currentUserId,   // ID do documento do usuário a ser atualizado
+      {
+        avatar: fileUrl,  // Atualizando o campo avatar com a nova URL
+      }
+    );
+
+    return fileUrl;
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+
+export async function getFilePreview(fileId: any, type: any) {
+  let fileUrl;
+
+  try {
+    if (type === "video") {
+      fileUrl = storage.getFileView(appwriteConfig.storageId, fileId);
+    } else if (type === "image") {
+      fileUrl = storage.getFilePreview(
+        appwriteConfig.storageId,
+        fileId,
+        2000,
+        2000,
+        "top" as ImageGravity,
+        100
+      );
+    } else {
+      throw new Error("Invalid file type");
+    }
+
+    if (!fileUrl) throw Error;
+
+    return fileUrl;
+  } catch (error: any) {
+    throw new Error(error);
+  }
+}
+
+export async function createVideoPost(form: any) {
+  try {
+    const [thumbnailUrl, videoUrl] = await Promise.all([
+      uploadFile(form.thumbnail, "image"),
+      uploadFile(form.video, "video"),
+    ]);
+
+
+  } catch (error: any) {
+    throw new Error(error);
   }
 }
